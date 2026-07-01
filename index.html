@@ -12,582 +12,441 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="スイカ管理">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* ステータスカラー（少しやわらかく） */
-    --red:#e04040; --gold:#d4960c; --green:#3a9642; --blue:#2878cc; --gray:#8a9099;
-    /* UI カラー（温かみのある土色ベース） */
-    --bg:#f7f2e8; --card:#fffef9; --ink:#2d2a24; --sub:#7a7060;
-    --accent:#3a7a28; --accent2:#5aaa44;
-    --surface:#ede8db; --border:#ddd6c6;
-    --header-from:#3d7a2a; --header-to:#1e4f14;
-    --warm-yellow:#fff8e1;
+    --red:#f03a3a; --gold:#ffaa00; --green:#44b840; --blue:#3888e8; --gray:#a0a898;
+    --bg:#fff6f0; --card:#ffffff; --ink:#2a2420; --sub:#9a8878;
+    --accent:#52b030; --accent2:#78d050;
+    --surface:#ffeee6; --border:#f0ddd4;
+    --header-from:#5aba32; --header-to:#2e8010;
+    --pink:#ff7eb3; --yellow:#ffe040;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   body{
     margin:0;
-    font-family:-apple-system,"Hiragino Sans","Yu Gothic UI",sans-serif;
+    font-family:'M PLUS Rounded 1c',-apple-system,"Hiragino Sans",sans-serif;
     background:var(--bg);color:var(--ink);
-    padding-bottom:48px;
+    padding-bottom:72px;
     font-size:14px;line-height:1.5;
+  }
+  /* 背景 - やわらかいストライプ模様 */
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:repeating-linear-gradient(
+      -45deg,
+      transparent,transparent 40px,
+      rgba(255,200,100,.04) 40px,rgba(255,200,100,.04) 41px
+    );
   }
 
   /* ===== ヘッダー ===== */
   header{
-    background:linear-gradient(150deg,var(--header-from) 0%,#2a6818 60%,var(--header-to) 100%);
-    color:#fff;padding:14px 16px 14px;
+    background:linear-gradient(135deg,#6ad040 0%,#44b020 50%,#2e9010 100%);
+    color:#fff;padding:12px 16px 14px;
     position:sticky;top:0;z-index:20;
-    box-shadow:0 3px 12px rgba(0,0,0,.22);
+    box-shadow:0 4px 16px rgba(60,150,20,.35);
+    overflow:hidden;
   }
-  .header-row1{display:flex;align-items:center;justify-content:space-between;}
+  /* スイカの縞模様（装飾） */
+  header::after{
+    content:'';position:absolute;top:-30px;right:-20px;
+    width:120px;height:120px;border-radius:50%;
+    background:rgba(255,255,255,.07);
+    pointer-events:none;
+  }
+  .header-row1{display:flex;align-items:center;justify-content:space-between;position:relative;}
   header h1{
-    margin:0;font-size:18px;font-weight:800;letter-spacing:.3px;
-    display:flex;align-items:center;gap:7px;
-    text-shadow:0 1px 3px rgba(0,0,0,.2);
+    margin:0;font-size:20px;font-weight:900;letter-spacing:.5px;
+    display:flex;align-items:center;gap:8px;
+    text-shadow:0 2px 4px rgba(0,0,0,.15);
   }
   .header-date{
-    font-size:12px;opacity:.9;font-weight:600;
-    background:rgba(255,255,255,.15);border-radius:8px;padding:3px 9px;
+    font-size:12px;font-weight:700;
+    background:rgba(255,255,255,.2);border-radius:20px;padding:3px 10px;
+    backdrop-filter:blur(4px);
   }
-  .header-row2{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+  .header-row2{display:flex;align-items:center;justify-content:space-between;margin-top:10px;position:relative;}
   .temp-block{display:flex;align-items:baseline;gap:6px;}
   .temp-val{
-    font-size:28px;font-weight:800;cursor:pointer;letter-spacing:-.5px;
-    border-bottom:2px dashed rgba(255,255,255,.45);line-height:1;
-    transition:opacity .15s;
+    font-size:30px;font-weight:900;cursor:pointer;letter-spacing:-.5px;
+    background:rgba(255,255,255,.15);border-radius:14px;padding:2px 10px;
+    line-height:1.2;transition:transform .1s;
   }
-  .temp-val:active{opacity:.7;}
-  .temp-label{font-size:11px;opacity:.8;}
-  .loc{font-size:11px;opacity:.75;display:flex;align-items:center;gap:3px;
-    background:rgba(255,255,255,.12);border-radius:6px;padding:2px 8px;}
+  .temp-val:active{transform:scale(.92);}
+  .temp-label{font-size:11px;opacity:.85;font-weight:700;}
+  .loc{font-size:11px;font-weight:700;opacity:.9;display:flex;align-items:center;gap:3px;
+    background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px;}
 
   /* ===== サマリー ===== */
   .summary{
     display:grid;grid-template-columns:repeat(4,1fr);
-    gap:8px;padding:12px 12px 8px;
+    gap:8px;padding:12px 12px 8px;position:relative;z-index:1;
   }
   .summary .box{
-    background:var(--card);border-radius:12px;
-    padding:10px 6px 8px;text-align:center;
-    box-shadow:0 1px 4px rgba(0,0,0,.07);
-    border-bottom:3px solid transparent;
+    background:var(--card);border-radius:20px;
+    padding:12px 4px 10px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+    border:2.5px solid transparent;
+    transition:transform .12s;
   }
-  .summary .box .num{font-size:22px;font-weight:800;line-height:1;letter-spacing:-.5px;}
-  .summary .box .lbl{font-size:10px;color:var(--sub);margin-top:3px;font-weight:500;}
-  .summary .box.red{border-bottom-color:var(--red);}
+  .summary .box:active{transform:scale(.95);}
+  .summary .box .ico{font-size:18px;line-height:1;margin-bottom:2px;}
+  .summary .box .num{font-size:24px;font-weight:900;line-height:1;letter-spacing:-.5px;}
+  .summary .box .lbl{font-size:9px;color:var(--sub);margin-top:3px;font-weight:700;}
+  .summary .box.red{border-color:#ffb3ae;background:linear-gradient(160deg,#fff0ef,#fff);}
   .summary .box.red .num{color:var(--red);}
-  .summary .box.gold{border-bottom-color:var(--gold);}
-  .summary .box.gold .num{color:var(--gold);}
-  .summary .box.green{border-bottom-color:var(--green);}
+  .summary .box.gold{border-color:#ffe090;background:linear-gradient(160deg,#fffbe8,#fff);}
+  .summary .box.gold .num{color:#cc8800;}
+  .summary .box.green{border-color:#a8e8a0;background:linear-gradient(160deg,#f0ffe8,#fff);}
   .summary .box.green .num{color:var(--green);}
 
-  /* ===== ツールバー ===== */
-  .toolbar{
-    display:flex;align-items:center;gap:6px;
-    padding:4px 12px 10px;flex-wrap:wrap;
-  }
-  .toolbar button{
-    font-size:12px;font-weight:600;
-    padding:8px 12px;border-radius:20px;
-    border:1.5px solid var(--border);
-    background:var(--card);color:var(--ink);
-    cursor:pointer;transition:all .12s;
-    white-space:nowrap;
-  }
+  /* ===== ツールバー（後方互換） ===== */
+  .toolbar{display:flex;gap:6px;padding:4px 12px 10px;flex-wrap:wrap;}
+  .toolbar button{font-size:12px;font-weight:700;padding:8px 14px;border-radius:20px;border:2px solid var(--border);background:var(--card);color:var(--ink);cursor:pointer;transition:all .12s;}
   .toolbar button:active{transform:scale(.96);}
-  .toolbar button.primary{
-    background:var(--accent);color:#fff;
-    border-color:var(--accent);
-    box-shadow:0 2px 6px rgba(45,107,34,.35);
-  }
-  .toolbar button.view-active{
-    background:var(--accent);color:#fff;border-color:var(--accent);
-  }
+  .toolbar button.primary,.toolbar button.view-active{background:var(--accent);color:#fff;border-color:var(--accent);}
   .toolbar-sep{width:1px;height:24px;background:var(--border);margin:0 2px;flex:0 0 auto;}
-  .toolbar-danger{color:#b00020!important;border-color:#f5c6cb!important;}
+  .toolbar-danger{color:var(--red)!important;border-color:#ffc8c0!important;}
 
   /* ===== 区画ナビ ===== */
   .block-nav{
-    display:flex;gap:6px;flex-wrap:wrap;
-    padding:6px 12px 10px;
-    background:var(--surface);
-    border-bottom:1px solid var(--border);
+    display:flex;gap:6px;padding:8px 12px 6px;
+    overflow-x:auto;position:relative;z-index:1;
   }
+  .block-nav::-webkit-scrollbar{display:none;}
   .block-btn{
     position:relative;display:flex;align-items:center;gap:4px;
     padding:6px 14px;border-radius:20px;
-    border:1.5px solid var(--border);
-    background:var(--card);font-size:12px;font-weight:600;
-    cursor:pointer;transition:all .12s;color:var(--sub);
+    border:2px solid var(--border);
+    background:var(--card);font-size:12px;font-weight:800;
+    cursor:pointer;color:var(--sub);white-space:nowrap;flex:0 0 auto;
+    transition:all .12s;box-shadow:0 2px 6px rgba(0,0,0,.06);
   }
-  .block-btn:active{transform:scale(.96);}
+  .block-btn:active{transform:scale(.94);}
   .block-btn .icon{font-size:14px;}
   .block-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);
-    box-shadow:0 2px 8px rgba(45,107,34,.3);}
-  .block-btn .dot{
-    position:absolute;top:-3px;right:-3px;
-    width:10px;height:10px;border-radius:50%;
-    background:var(--red);box-shadow:0 0 0 2px #fff;
-  }
+    box-shadow:0 4px 12px rgba(80,176,48,.4);}
+  .block-btn .dot{position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;background:var(--red);border:2.5px solid var(--bg);}
 
   /* ===== 株カード ===== */
-  .plant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;padding:10px 12px;}
+  .plant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:8px 12px;position:relative;z-index:1;}
   .plant-card{
-    border-radius:14px;padding:0;
-    box-shadow:0 1px 5px rgba(0,0,0,.09);
-    cursor:pointer;border:1.5px solid var(--border);
-    display:flex;flex-direction:column;
-    overflow:hidden;
+    border-radius:24px;padding:0;overflow:hidden;
+    box-shadow:0 4px 16px rgba(0,0,0,.1);
+    cursor:pointer;background:var(--card);
     transition:transform .12s,box-shadow .12s;
-    background:var(--card);
+    border:none;
   }
-  .plant-card:active{transform:scale(.97);box-shadow:0 1px 3px rgba(0,0,0,.06);}
-  /* ステータス別アクセント */
-  .plant-card.grad-red{border-color:#fca5a1;}
-  .plant-card.grad-gold{border-color:#f0d070;}
-  .plant-card.grad-green{border-color:#86c98a;}
-  .plant-card.grad-blue{border-color:#93bce8;}
-  .plant-card.grad-gray{border-color:var(--border);}
-  /* 上部カラーストリップ */
-  .card-strip{height:4px;width:100%;}
+  .plant-card:active{transform:scale(.96);box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .plant-card.pulse{animation:pulseRed 1.8s infinite;}
+  @keyframes pulseRed{
+    0%{box-shadow:0 4px 16px rgba(240,58,58,.0);}
+    50%{box-shadow:0 4px 24px rgba(240,58,58,.5);}
+    100%{box-shadow:0 4px 16px rgba(240,58,58,.0);}
+  }
+  /* 古いcard-strip互換 */
+  .card-strip{height:5px;width:100%;}
   .grad-red .card-strip{background:var(--red);}
   .grad-gold .card-strip{background:var(--gold);}
   .grad-green .card-strip{background:var(--green);}
   .grad-blue .card-strip{background:var(--blue);}
-  .grad-gray .card-strip{background:var(--border);}
-  .card-body{padding:10px 10px 8px;}
-  .plant-card.pulse{animation:pulseRed 1.8s infinite;}
-  @keyframes pulseRed{
-    0%{box-shadow:0 0 0 0 rgba(217,48,37,.4);}
-    65%{box-shadow:0 0 0 8px rgba(217,48,37,0);}
-    100%{box-shadow:0 0 0 0 rgba(217,48,37,0);}
-  }
-  .plant-card .pname{font-weight:800;font-size:15px;letter-spacing:-.2px;}
-  .plant-card .ptag{
-    display:inline-block;font-size:10px;font-weight:600;
-    color:var(--accent);background:#e8f5e4;
-    border-radius:4px;padding:1px 5px;margin-top:1px;
-  }
+  .grad-gray .card-strip{background:#d0d4cc;}
   .plant-card .cardtop{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;}
-  .plant-card .badge{
-    display:inline-flex;align-items:center;gap:3px;
-    font-size:10px;font-weight:700;
-    color:#fff;border-radius:6px;padding:3px 7px;
-    align-self:flex-start;letter-spacing:.2px;
-  }
-  .badge.red,.dot-flower.red{background:var(--red);}
-  .badge.gold,.dot-flower.gold{background:var(--gold);}
-  .badge.green,.dot-flower.green{background:var(--green);}
-  .badge.blue,.dot-flower.blue{background:var(--blue);}
-  .badge.gray,.dot-flower.gray{background:var(--gray);}
-  .vine-row{display:flex;align-items:center;gap:4px;margin-top:3px;}
-  .vine-label{
-    font-size:9px;font-weight:700;color:#fff;
-    background:var(--accent);border-radius:3px;
-    width:16px;height:14px;display:flex;align-items:center;justify-content:center;
-    flex:0 0 auto;
-  }
+  .plant-card .badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#fff;border-radius:20px;padding:3px 8px;align-self:flex-start;}
+  .badge.red{background:var(--red);}
+  .badge.gold{background:var(--gold);}
+  .badge.green{background:var(--green);}
+  .badge.blue{background:var(--blue);}
+  .badge.gray{background:var(--gray);}
+  .vine-row{display:flex;align-items:center;gap:4px;margin-top:4px;}
+  .vine-label{font-size:9px;font-weight:800;color:#fff;background:var(--accent);border-radius:4px;width:16px;height:14px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
   .flower-dots{display:flex;gap:3px;flex-wrap:wrap;}
   .dot-flower{width:16px;height:16px;border-radius:50%;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .dot-flower.red{background:var(--red);}
+  .dot-flower.gold{background:var(--gold);}
+  .dot-flower.green{background:var(--green);}
+  .dot-flower.blue{background:var(--blue);}
+  .dot-flower.gray{background:var(--gray);}
   .gauge-wrap{position:relative;width:44px;height:44px;flex:0 0 auto;}
   .gauge-wrap svg{display:block;}
-  .gauge-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--ink);}
-  .accum-text{font-size:10px;color:var(--sub);margin-top:4px;font-weight:500;}
+  .gauge-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:var(--ink);}
+  .accum-text{font-size:10px;color:var(--sub);margin-top:4px;font-weight:600;}
+  .card-body{padding:10px 12px 10px;}
+  .plant-card .pname{font-weight:900;font-size:15px;}
+  .plant-card .ptag{display:inline-block;font-size:10px;font-weight:800;color:var(--accent);background:#e8ffe0;border-radius:8px;padding:2px 6px;margin-top:2px;}
 
-  .empty{
-    padding:48px 24px;text-align:center;color:var(--sub);
-    font-size:14px;line-height:1.7;
-  }
-  .empty::before{content:"🌱";display:block;font-size:36px;margin-bottom:10px;}
+  .empty{padding:56px 24px;text-align:center;color:var(--sub);font-size:14px;line-height:1.8;position:relative;z-index:1;}
+  .empty::before{content:"🌱";display:block;font-size:52px;margin-bottom:12px;}
 
   /* ===== モーダル ===== */
-  .overlay{
-    position:fixed;inset:0;
-    background:rgba(0,0,0,.5);
-    display:none;align-items:flex-end;justify-content:center;
-    z-index:50;backdrop-filter:blur(2px);
-  }
+  .overlay{position:fixed;inset:0;background:rgba(30,50,20,.45);display:none;align-items:flex-end;justify-content:center;z-index:50;backdrop-filter:blur(4px);}
   .overlay.show{display:flex;}
-  .sheet{
-    background:#fff;width:100%;max-width:520px;
-    max-height:90vh;overflow-y:auto;
-    border-radius:20px 20px 0 0;
-    padding:0;
-    box-shadow:0 -4px 24px rgba(0,0,0,.15);
-  }
-  .sheet-handle{
-    width:36px;height:4px;background:#d1d5db;border-radius:2px;
-    margin:12px auto 0;
-  }
-  .sheet-inner{padding:12px 16px 24px;}
-  .sheet h2{margin:0 0 14px;font-size:17px;font-weight:800;}
-  .sheet .close-btn{
-    float:right;border:none;background:var(--surface);
-    width:28px;height:28px;border-radius:50%;
-    font-size:14px;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    color:var(--sub);
-  }
+  .sheet{background:#fff;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;border-radius:28px 28px 0 0;padding:0;box-shadow:0 -8px 32px rgba(0,0,0,.18);}
+  .sheet-handle{width:40px;height:5px;background:#e0e8d8;border-radius:3px;margin:14px auto 0;}
+  .sheet-inner{padding:14px 18px 32px;}
+  .sheet h2{margin:0 0 16px;font-size:18px;font-weight:900;}
+  .sheet .close-btn{float:right;border:none;background:#f0f8e8;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:700;}
   .field{margin-bottom:12px;}
-  .field label{display:block;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
-  .field input,.field select,.field textarea{
-    width:100%;padding:9px 10px;
-    border:1.5px solid var(--border);border-radius:10px;
-    font-size:14px;font-family:inherit;
-    background:#fafaf8;transition:border-color .12s;
-  }
-  .field input:focus,.field select:focus,.field textarea:focus{
-    outline:none;border-color:var(--accent);background:#fff;
-  }
-  .vine-toggle{display:flex;gap:6px;margin-bottom:10px;}
-  .vine-toggle button{
-    flex:1;padding:9px;border-radius:10px;
-    border:1.5px solid var(--border);background:#fafaf8;
-    font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;
-  }
+  .field label{display:block;font-size:11px;font-weight:800;color:var(--sub);margin-bottom:5px;letter-spacing:.5px;}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:14px;font-size:14px;font-family:inherit;background:#fafdf8;transition:border-color .12s;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);background:#fff;}
+  .vine-toggle{display:flex;gap:8px;margin-bottom:12px;}
+  .vine-toggle button{flex:1;padding:10px;border-radius:14px;border:2px solid var(--border);background:#fafdf8;font-size:13px;font-weight:800;cursor:pointer;transition:all .12s;font-family:inherit;}
   .vine-toggle button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   .flower-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;}
-  .flower-tab{
-    flex:0 0 auto;padding:6px 12px;border-radius:20px;
-    border:1.5px solid var(--border);background:#fafaf8;
-    font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;
-  }
+  .flower-tab{flex:0 0 auto;padding:7px 14px;border-radius:20px;border:2px solid var(--border);background:#fafdf8;font-size:12px;font-weight:800;cursor:pointer;transition:all .12s;font-family:inherit;}
   .flower-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   .row2{display:flex;gap:8px;}
-  .row2 > .field{flex:1;}
-  .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#fff;border-radius:8px;padding:4px 10px;}
-  .help-text{font-size:12px;color:var(--sub);background:var(--surface);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.6;}
+  .row2>.field{flex:1;}
+  .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#fff;border-radius:20px;padding:5px 12px;}
+  .help-text{font-size:12px;color:var(--sub);background:#f5fff0;border-radius:14px;padding:10px 14px;margin-bottom:12px;line-height:1.7;border:1.5px solid #d0f0c0;}
 
   /* ===== 一括編集テーブル ===== */
   table.bulk{width:100%;border-collapse:collapse;font-size:10px;}
   table.bulk th,table.bulk td{border:1px solid var(--border);padding:4px;text-align:center;}
-  table.bulk th{background:var(--surface);position:sticky;top:0;font-weight:700;font-size:9px;}
+  table.bulk th{background:#f5fff0;position:sticky;top:0;font-weight:800;font-size:9px;}
   table.bulk input[type=date]{width:84px;font-size:9px;}
   table.bulk input[type=text]{width:48px;font-size:9px;}
   table.bulk select{font-size:9px;width:50px;}
   .bulk-wrap{overflow-x:auto;padding:0 12px;}
-  .plantname-cell{white-space:nowrap;font-weight:800;}
+  .plantname-cell{white-space:nowrap;font-weight:900;}
 
   /* ===== ボトムナビ ===== */
   .bottom-nav{
-    position:fixed;bottom:0;left:0;right:0;
-    height:60px;
-    background:var(--card);
-    border-top:1px solid var(--border);
+    position:fixed;bottom:0;left:0;right:0;height:64px;
+    background:#fff;border-top:none;
     display:flex;z-index:30;
-    box-shadow:0 -2px 16px rgba(0,0,0,.1);
+    border-radius:24px 24px 0 0;
+    box-shadow:0 -4px 24px rgba(60,150,20,.15);
+    padding:0 8px;
   }
   .nav-btn{
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:2px;border:none;background:none;cursor:pointer;
-    color:var(--sub);padding:6px 0;
-    transition:color .15s;font-family:inherit;
+    color:#b8c8b0;padding:8px 0;
+    transition:color .15s;font-family:inherit;position:relative;
   }
-  .nav-btn .nav-icon{font-size:22px;line-height:1;}
-  .nav-btn .nav-label{font-size:10px;font-weight:700;letter-spacing:.3px;}
+  .nav-btn .nav-icon{font-size:24px;line-height:1;transition:transform .15s;}
+  .nav-btn .nav-label{font-size:10px;font-weight:800;letter-spacing:.3px;}
   .nav-btn.active{color:var(--accent);}
-  .nav-btn .nav-badge{
-    position:absolute;top:6px;
-    width:8px;height:8px;border-radius:50%;
-    background:var(--red);border:2px solid #fff;
+  .nav-btn.active .nav-icon{transform:scale(1.15);}
+  .nav-btn.active::before{
+    content:'';position:absolute;top:6px;
+    width:40px;height:40px;border-radius:14px;
+    background:rgba(80,176,48,.12);
   }
-  .nav-btn{position:relative;}
+  .nav-btn .nav-badge{position:absolute;top:5px;right:20%;width:9px;height:9px;border-radius:50%;background:var(--red);border:2.5px solid #fff;}
 
   /* ===== FAB ===== */
   .fab{
-    position:fixed;right:16px;bottom:72px;
-    width:54px;height:54px;border-radius:50%;
-    background:var(--accent);color:#fff;
-    border:none;font-size:26px;font-weight:300;
+    position:fixed;right:18px;bottom:76px;
+    width:58px;height:58px;border-radius:50%;
+    background:linear-gradient(135deg,#70d848,#3a9820);
+    color:#fff;border:none;font-size:30px;
     cursor:pointer;
-    box-shadow:0 4px 16px rgba(45,107,34,.45);
+    box-shadow:0 6px 20px rgba(80,176,48,.5),0 0 0 4px rgba(80,176,48,.15);
     display:flex;align-items:center;justify-content:center;
     z-index:25;transition:transform .15s,box-shadow .15s;
+    animation:fabBounce 2.5s ease-in-out infinite;
   }
-  .fab:active{transform:scale(.93);box-shadow:0 2px 8px rgba(45,107,34,.3);}
+  .fab:active{transform:scale(.88);box-shadow:0 3px 10px rgba(80,176,48,.3);}
+  @keyframes fabBounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
 
   /* ===== 収穫アラート ===== */
   .harvest-alert{
-    margin:10px 12px 0;border-radius:12px;
-    background:linear-gradient(135deg,#d93025,#b71c1c);
-    color:#fff;padding:10px 14px;
+    margin:10px 12px 0;border-radius:20px;
+    background:linear-gradient(135deg,#ff6060,#e81818);
+    color:#fff;padding:12px 16px;
     display:flex;align-items:center;gap:10px;
-    box-shadow:0 2px 10px rgba(217,48,37,.35);
-    cursor:pointer;animation:pulseRed 2s infinite;
+    box-shadow:0 4px 16px rgba(240,58,58,.4);
+    cursor:pointer;animation:pulseRed 1.8s infinite;
   }
-  .harvest-alert .alert-icon{font-size:24px;flex:0 0 auto;}
-  .harvest-alert .alert-text .alert-title{font-weight:800;font-size:14px;}
-  .harvest-alert .alert-text .alert-sub{font-size:11px;opacity:.9;margin-top:1px;}
-  .harvest-alert .alert-arrow{margin-left:auto;font-size:18px;opacity:.8;}
+  .harvest-alert .alert-icon{font-size:28px;flex:0 0 auto;}
+  .harvest-alert .alert-text .alert-title{font-weight:900;font-size:15px;}
+  .harvest-alert .alert-text .alert-sub{font-size:12px;opacity:.92;margin-top:2px;font-weight:700;}
+  .harvest-alert .alert-arrow{margin-left:auto;font-size:20px;opacity:.9;}
 
   /* ===== 管理パネル ===== */
-  .manage-wrap{padding:12px;}
-  .manage-section{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
-  .manage-section-title{font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;padding:12px 16px 6px;}
-  .manage-row{
-    display:flex;align-items:center;gap:12px;
-    padding:14px 16px;border-top:1px solid var(--surface);
-    cursor:pointer;transition:background .1s;
-  }
+  .manage-wrap{padding:12px;position:relative;z-index:1;}
+  .manage-section{background:var(--card);border-radius:24px;overflow:hidden;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.08);}
+  .manage-section-title{font-size:11px;font-weight:900;color:var(--sub);text-transform:uppercase;letter-spacing:1px;padding:14px 18px 8px;}
+  .manage-row{display:flex;align-items:center;gap:12px;padding:14px 18px;border-top:1px solid #f5f5f0;cursor:pointer;transition:background .1s;}
   .manage-row:first-of-type{border-top:none;}
-  .manage-row:active{background:var(--surface);}
-  .manage-row .row-icon{font-size:22px;flex:0 0 auto;width:32px;text-align:center;}
-  .manage-row .row-info .row-title{font-size:14px;font-weight:700;}
-  .manage-row .row-info .row-sub{font-size:11px;color:var(--sub);margin-top:1px;}
-  .manage-row .row-arrow{margin-left:auto;color:var(--border);font-size:16px;}
+  .manage-row:active{background:#f8fff4;}
+  .manage-row .row-icon{font-size:24px;flex:0 0 auto;width:34px;text-align:center;}
+  .manage-row .row-info .row-title{font-size:14px;font-weight:800;}
+  .manage-row .row-info .row-sub{font-size:11px;color:var(--sub);margin-top:2px;font-weight:600;}
+  .manage-row .row-arrow{margin-left:auto;color:#d0d8c8;font-size:18px;font-weight:700;}
   .manage-row.danger .row-title{color:var(--red);}
+  .temp-manage{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid #f5f5f0;}
+  .temp-manage .tm-val{font-size:32px;font-weight:900;color:var(--ink);letter-spacing:-.5px;}
+  .temp-manage .tm-label{font-size:11px;color:var(--sub);margin-top:2px;font-weight:700;}
+  .temp-manage .tm-btn{padding:8px 16px;border-radius:20px;border:2px solid var(--border);background:#f5fff0;font-size:12px;font-weight:800;cursor:pointer;color:var(--ink);font-family:inherit;}
 
-  /* 管理タブ：温度表示 */
-  .temp-manage{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:14px 16px;border-top:1px solid var(--surface);
-  }
-  .temp-manage .tm-val{font-size:28px;font-weight:800;color:var(--ink);letter-spacing:-.5px;}
-  .temp-manage .tm-label{font-size:11px;color:var(--sub);margin-top:2px;}
-  .temp-manage .tm-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);}
-
-  /* ===== 株カード（新デザイン） ===== */
-  .plant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:8px 12px;}
+  /* ===== 株カード（新デザイン）重複解消 ===== */
+  .plant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:8px 12px;position:relative;z-index:1;}
   .plant-card{
-    border-radius:16px;overflow:hidden;
-    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    border-radius:24px;overflow:hidden;
+    box-shadow:0 6px 20px rgba(0,0,0,.1);
     cursor:pointer;background:var(--card);
     transition:transform .12s;
     display:flex;flex-direction:column;
   }
   .plant-card:active{transform:scale(.96);}
+  /* ===== 株カード（新デザイン） ===== */
   .card-head{
-    padding:12px 12px 10px;
-    display:flex;flex-direction:column;gap:2px;
+    padding:14px 14px 12px;
+    display:flex;flex-direction:column;gap:3px;
+    position:relative;overflow:hidden;
   }
-  .card-head.red{background:linear-gradient(135deg,#e53530,#c62828);}
-  .card-head.gold{background:linear-gradient(135deg,#c8940a,#a07008);}
-  .card-head.green{background:linear-gradient(135deg,#2d8a34,#1b6320);}
-  .card-head.blue{background:linear-gradient(135deg,#1a73c8,#1256a0);}
-  .card-head.gray{background:linear-gradient(135deg,#6b7280,#4b5563);}
-  .card-no{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;}
-  .card-group-tag{font-size:10px;font-weight:700;color:rgba(255,255,255,.8);margin-top:1px;}
-  .card-status-row{display:flex;align-items:center;gap:4px;margin-top:6px;}
-  .card-status-icon{font-size:13px;}
-  .card-status-text{font-size:11px;font-weight:800;color:rgba(255,255,255,.95);}
-  .card-body{padding:8px 10px 10px;}
-  .card-vine-row{display:flex;align-items:center;gap:4px;margin-bottom:4px;}
-  .card-vine-lbl{
-    font-size:9px;font-weight:800;color:#fff;
-    background:var(--accent);border-radius:3px;
-    width:14px;height:14px;display:flex;align-items:center;justify-content:center;
-    flex:0 0 auto;
+  .card-head::after{
+    content:'';position:absolute;top:-16px;right:-16px;
+    width:64px;height:64px;border-radius:50%;
+    background:rgba(255,255,255,.12);pointer-events:none;
   }
-  .card-dots{display:flex;gap:3px;flex-wrap:wrap;}
-  .card-dot{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;}
+  .card-head.red{background:linear-gradient(135deg,#ff5a5a,#e82020);}
+  .card-head.gold{background:linear-gradient(135deg,#ffc830,#e09000);}
+  .card-head.green{background:linear-gradient(135deg,#58d040,#28a010);}
+  .card-head.blue{background:linear-gradient(135deg,#4898f8,#1868d8);}
+  .card-head.gray{background:linear-gradient(135deg,#a0a8a0,#708070);}
+  .card-no{font-size:28px;font-weight:900;color:#fff;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.2);}
+  .card-group-tag{font-size:11px;font-weight:800;color:rgba(255,255,255,.85);}
+  .card-status-row{display:flex;align-items:center;gap:5px;margin-top:8px;}
+  .card-status-icon{font-size:16px;}
+  .card-status-text{font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.15);}
+  .card-body{padding:10px 12px 12px;}
+  .card-vine-row{display:flex;align-items:center;gap:4px;margin-bottom:5px;}
+  .card-vine-lbl{font-size:9px;font-weight:900;color:#fff;background:var(--accent);border-radius:6px;padding:1px 5px;flex:0 0 auto;}
+  .card-dots{display:flex;gap:4px;flex-wrap:wrap;}
+  .card-dot{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff;border:2px solid rgba(255,255,255,.5);}
   .card-dot.red{background:var(--red);}
   .card-dot.gold{background:var(--gold);}
   .card-dot.green{background:var(--green);}
   .card-dot.blue{background:var(--blue);}
-  .card-dot.gray{background:#c8cbc5;}
-  .card-accum{font-size:10px;color:var(--sub);font-weight:600;margin-top:2px;}
-  .plant-card.pulse{animation:pulseRed 1.8s infinite;}
-
-  /* 区画ナビ（コンパクト） */
-  .block-nav{
-    display:flex;gap:6px;padding:8px 12px 6px;
-    overflow-x:auto;
-    background:transparent;border-bottom:none;
-  }
-  .block-nav::-webkit-scrollbar{display:none;}
-  .block-btn{
-    position:relative;display:flex;align-items:center;gap:4px;
-    padding:5px 12px;border-radius:16px;
-    border:1.5px solid var(--border);
-    background:var(--card);font-size:12px;font-weight:700;
-    cursor:pointer;color:var(--sub);white-space:nowrap;flex:0 0 auto;
-  }
-  .block-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .block-btn .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--red);border:2px solid #fff;}
+  .card-dot.gray{background:#c0c8c0;}
+  .card-accum{font-size:10px;color:var(--sub);font-weight:700;margin-top:4px;}
 
   /* ===== 同期ステータスドット ===== */
-  .sync-dot{
-    width:10px;height:10px;border-radius:50%;flex:0 0 auto;
-    border:2px solid rgba(255,255,255,.4);
-    transition:background .3s;
-  }
-  .sync-dot.offline{background:#888;}
-  .sync-dot.syncing{background:#f0c040;animation:syncPulse .8s infinite;}
-  .sync-dot.ok{background:#4cdb6a;}
-  .sync-dot.error{background:var(--red);}
-  @keyframes syncPulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+  .sync-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;border:2px solid rgba(255,255,255,.5);transition:background .3s;}
+  .sync-dot.offline{background:rgba(255,255,255,.4);}
+  .sync-dot.syncing{background:#ffe040;animation:syncPulse .8s infinite;}
+  .sync-dot.ok{background:#80ff80;}
+  .sync-dot.error{background:#ff8080;}
+  @keyframes syncPulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 
-  .empty{padding:56px 24px;text-align:center;color:var(--sub);font-size:14px;line-height:1.8;}
-  .empty::before{content:"🌱";display:block;font-size:48px;margin-bottom:12px;}
-  .empty-cta{display:inline-block;margin-top:12px;padding:10px 24px;border-radius:20px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;border:none;}
+  .empty-cta{display:inline-block;margin-top:14px;padding:12px 28px;border-radius:24px;background:var(--accent);color:#fff;font-size:14px;font-weight:900;cursor:pointer;border:none;box-shadow:0 4px 14px rgba(80,176,48,.4);font-family:inherit;}
 
   /* ===== 圃場マップ ===== */
   .map-wrap{padding:10px 12px 80px;}
-  .map-compass{
-    display:flex;align-items:center;justify-content:center;gap:0;
-    font-size:12px;font-weight:800;color:var(--sub);
-    margin-bottom:10px;letter-spacing:.5px;
-  }
-  .map-compass .cmp-w{
-    flex:1;text-align:right;padding-right:10px;
-    color:#7a6a50;font-size:11px;
-  }
-  .map-compass .cmp-e{
-    flex:1;text-align:left;padding-left:10px;
-    color:#7a6a50;font-size:11px;
-  }
-  .map-compass .cmp-center{
-    display:flex;gap:6px;align-items:center;font-size:10px;flex-wrap:wrap;justify-content:center;
-  }
-  .map-legend-dot{
-    display:inline-flex;align-items:center;gap:4px;
-    font-size:10px;font-weight:600;color:var(--sub);
-  }
-  .map-legend-dot span{
-    width:11px;height:11px;border-radius:50%;display:inline-block;
-    border:2px solid rgba(255,255,255,.6);
-  }
-  .map-group{margin-bottom:20px;}
+  .map-compass{display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .map-compass .cmp-w{flex:1;text-align:right;padding-right:10px;font-size:12px;font-weight:900;color:#8a9870;}
+  .map-compass .cmp-e{flex:1;text-align:left;padding-left:10px;font-size:12px;font-weight:900;color:#8a9870;}
+  .map-compass .cmp-center{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;}
+  .map-legend-dot{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--sub);}
+  .map-legend-dot span{width:13px;height:13px;border-radius:50%;display:inline-block;border:2.5px solid rgba(255,255,255,.85);box-shadow:0 1px 4px rgba(0,0,0,.15);}
+  .map-group{margin-bottom:24px;}
   .map-group-title{
-    font-size:14px;font-weight:800;color:#4a6820;
-    margin:0 0 10px;padding:6px 12px;
-    background:rgba(255,255,255,.6);
-    border-radius:10px;
-    display:flex;align-items:center;gap:6px;
-    border-left:4px solid var(--accent);
+    font-size:15px;font-weight:900;color:#3a6018;
+    margin:0 0 10px;padding:8px 16px;
+    background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(230,255,200,.8));
+    border-radius:18px;display:flex;align-items:center;gap:8px;
+    box-shadow:0 3px 10px rgba(80,160,40,.12);
+    border:2px solid rgba(160,220,100,.35);
   }
 
-  /* === 3本仕立て 千鳥畝ビュー === */
+  /* 畑レーン — スイカ畑の芝生風 */
   .field-lane{
-    display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+    display:flex;flex-direction:column;align-items:flex-start;gap:9px;
     background:
-      repeating-linear-gradient(to bottom,transparent,transparent 72px,rgba(120,100,60,.07) 72px,rgba(120,100,60,.07) 73px),
-      linear-gradient(160deg,#e8eedc,#dbe5c5);
-    border-radius:16px;padding:16px 16px 24px;overflow-y:auto;
+      radial-gradient(ellipse at 15% 15%,rgba(140,210,80,.22) 0%,transparent 55%),
+      radial-gradient(ellipse at 85% 85%,rgba(100,190,60,.18) 0%,transparent 55%),
+      linear-gradient(160deg,#c8e890,#b0d870);
+    border-radius:22px;padding:18px 16px 28px;overflow-y:auto;
     max-height:70vh;
-    box-shadow:inset 0 2px 10px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.06);
-    border:1.5px solid #c8d4a4;
+    box-shadow:inset 0 3px 14px rgba(0,0,0,.09),0 5px 18px rgba(80,150,30,.18);
+    border:2.5px solid rgba(160,224,80,.55);
   }
 
   /* 1株カード */
   .fp{
     display:flex;flex-direction:column;gap:0;
     cursor:pointer;flex:0 0 auto;
-    background:rgba(255,255,255,.82);
-    border-radius:14px;
-    border:1.5px solid rgba(255,255,255,.95);
-    box-shadow:0 2px 10px rgba(0,0,0,.08);
-    padding:8px 10px 6px;
-    transition:transform .12s,box-shadow .12s;
-    backdrop-filter:blur(2px);
+    background:rgba(255,255,255,.93);
+    border-radius:20px;
+    border:2.5px solid rgba(255,255,255,.98);
+    box-shadow:0 5px 16px rgba(0,0,0,.13),0 1px 4px rgba(0,0,0,.07);
+    padding:9px 11px 8px;
+    transition:transform .15s,box-shadow .15s;
   }
-  .fp:active{transform:scale(.97);box-shadow:0 1px 4px rgba(0,0,0,.06);}
-  .fp.fp-even{margin-left:40px;}
+  .fp:active{transform:scale(.94);box-shadow:0 2px 6px rgba(0,0,0,.1);}
+  .fp.fp-even{margin-left:44px;}
 
-  /* 各ツル行 */
-  .fp-row{display:flex;align-items:center;min-height:20px;gap:4px;margin-bottom:2px;}
+  .fp-row{display:flex;align-items:center;min-height:22px;gap:4px;margin-bottom:2px;}
+  .fp-w{display:flex;gap:5px;align-items:center;width:96px;justify-content:flex-end;flex:0 0 auto;}
+  .fp-e{display:flex;gap:5px;align-items:center;width:96px;justify-content:flex-start;flex:0 0 auto;}
+  .fp-vlabel{font-size:9px;font-weight:900;color:#4a7820;background:rgba(160,228,80,.4);border-radius:6px;padding:1px 5px;flex:0 0 auto;white-space:nowrap;}
+  .fp-ctr{width:42px;height:42px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
 
-  /* 西側ドットゾーン (右寄せ) */
-  .fp-w{
-    display:flex;gap:4px;align-items:center;
-    width:96px;justify-content:flex-end;flex:0 0 auto;
-  }
-  /* 東側ドットゾーン (左寄せ) */
-  .fp-e{
-    display:flex;gap:4px;align-items:center;
-    width:96px;justify-content:flex-start;flex:0 0 auto;
-  }
-  /* ツルラベル */
-  .fp-vlabel{
-    font-size:8px;font-weight:800;color:rgba(80,100,50,.8);
-    writing-mode:horizontal-tb;
-    background:rgba(180,210,140,.5);border-radius:3px;
-    padding:1px 3px;flex:0 0 auto;
-    white-space:nowrap;
-  }
-  /* 中心ゾーン */
-  .fp-ctr{width:38px;height:38px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
-
-  /* 株番号マーカー */
+  /* 株番号 — スイカゲームのフルーツ風 */
   .fp-no{
-    width:36px;height:36px;border-radius:50%;
-    background:linear-gradient(135deg,#4a8830,#2d6018);
+    width:40px;height:40px;border-radius:50%;
+    background:linear-gradient(145deg,#88e848,#3a9810);
     color:#fff;
     display:flex;align-items:center;justify-content:center;
-    font-size:12px;font-weight:900;
-    box-shadow:0 3px 8px rgba(0,0,0,.28);
-    border:3px solid rgba(255,255,255,.75);
+    font-size:14px;font-weight:900;
+    box-shadow:0 5px 12px rgba(60,150,20,.4),inset 0 2px 3px rgba(255,255,255,.35);
+    border:3.5px solid rgba(255,255,255,.85);
     letter-spacing:-.5px;
+    text-shadow:0 1px 3px rgba(0,0,0,.25);
   }
-  .fp-no.col-red{background:linear-gradient(135deg,#e04040,#b01010);}
-  .fp-no.col-gold{background:linear-gradient(135deg,#d4960c,#9a6800);}
-  .fp-no.pulse{animation:pulseRed 1.8s infinite;}
+  .fp-no.col-red{background:linear-gradient(145deg,#ff6868,#d01018);}
+  .fp-no.col-gold{background:linear-gradient(145deg,#ffe050,#c07800);}
+  .fp-no.pulse{animation:pulseRed 1.6s infinite;}
 
-  /* ツル方向ミスボタン */
-  .fp-flip{display:flex;justify-content:center;margin-top:3px;}
+  .fp-flip{display:flex;justify-content:center;margin-top:4px;}
   .fp-flip-btn{
-    font-size:9px;font-weight:700;
-    background:rgba(240,245,230,.9);border:1px solid rgba(100,120,60,.25);
-    border-radius:6px;padding:2px 8px;cursor:pointer;
-    color:#5a7030;line-height:1.5;
-    transition:background .1s;
+    font-size:10px;font-weight:900;
+    background:rgba(200,245,150,.65);border:1.5px solid rgba(120,190,60,.35);
+    border-radius:10px;padding:2px 10px;cursor:pointer;
+    color:#3a7018;font-family:inherit;
+    transition:all .12s;
   }
-  .fp-flip-btn:active{background:#e0e8c8;}
+  .fp-flip-btn:active{background:rgba(160,228,90,.9);}
 
-  /* 着果ドット */
+  /* 着果ドット — ぷっくりフルーツ風 */
   .fp-dot{
-    width:16px;height:16px;border-radius:50%;flex:0 0 auto;
-    box-shadow:0 1px 3px rgba(0,0,0,.22);
-    border:2px solid rgba(255,255,255,.65);
-    transition:transform .1s;
+    width:18px;height:18px;border-radius:50%;flex:0 0 auto;
+    box-shadow:0 2px 6px rgba(0,0,0,.22),inset 0 1px 2px rgba(255,255,255,.45);
+    border:2.5px solid rgba(255,255,255,.75);
+    transition:transform .12s;
   }
-  .fp-dot:hover{transform:scale(1.2);}
-  .fp-dot.red{background:var(--red);}
-  .fp-dot.gold{background:var(--gold);}
-  .fp-dot.green{background:var(--green);}
-  .fp-dot.blue{background:var(--blue);}
-  .fp-dot.gray{background:#c0c4b8;}
+  .fp-dot:hover{transform:scale(1.28);}
+  .fp-dot.red{background:radial-gradient(circle at 35% 35%,#ff8888,#e01820);}
+  .fp-dot.gold{background:radial-gradient(circle at 35% 35%,#ffe888,#e09800);}
+  .fp-dot.green{background:radial-gradient(circle at 35% 35%,#88e888,#20a828);}
+  .fp-dot.blue{background:radial-gradient(circle at 35% 35%,#88c0ff,#1868d8);}
+  .fp-dot.gray{background:radial-gradient(circle at 35% 35%,#dce4d4,#a8b0a0);}
 
   /* 株情報エリア */
   .fp-info{
     display:flex;align-items:center;justify-content:center;
-    gap:5px;margin-top:6px;flex-wrap:wrap;
-    border-top:1px solid rgba(0,0,0,.06);padding-top:5px;
+    gap:5px;margin-top:8px;flex-wrap:wrap;
+    border-top:2px dashed rgba(150,210,80,.4);padding-top:7px;
   }
-  .fp-info-date{
-    font-size:10px;font-weight:700;color:#6a5a38;
-    background:rgba(255,220,100,.35);border-radius:6px;
-    padding:2px 7px;white-space:nowrap;
-  }
-  .fp-accum-wrap{
-    display:flex;align-items:center;gap:4px;flex:1;min-width:60px;
-  }
-  .fp-accum-bar{
-    height:5px;border-radius:3px;background:rgba(0,0,0,.1);
-    flex:1;overflow:hidden;
-  }
-  .fp-accum-fill{height:100%;border-radius:3px;transition:width .3s;}
-  .fp-accum-fill.green{background:var(--green);}
-  .fp-accum-fill.gold{background:var(--gold);}
-  .fp-accum-fill.red{background:var(--red);}
-  .fp-accum-text{font-size:9px;font-weight:800;color:var(--sub);white-space:nowrap;}
-  .fp-info-days{
-    font-size:10px;font-weight:900;
-    padding:2px 9px;border-radius:10px;white-space:nowrap;
-  }
-  .fp-info-days.overdue{background:var(--red);color:#fff;animation:pulseRed 1.8s infinite;}
-  .fp-info-days.soon{background:var(--gold);color:#fff;}
-  .fp-info-days.growing{background:#e0f0e0;color:#2a7a32;border:1px solid #b8dcb8;}
+  .fp-info-date{font-size:10px;font-weight:900;color:#4a6820;background:rgba(220,255,130,.6);border-radius:9px;padding:2px 8px;white-space:nowrap;}
+  .fp-accum-wrap{display:flex;align-items:center;gap:4px;flex:1;min-width:60px;}
+  .fp-accum-bar{height:7px;border-radius:5px;background:rgba(0,0,0,.09);flex:1;overflow:hidden;}
+  .fp-accum-fill{height:100%;border-radius:5px;transition:width .4s;}
+  .fp-accum-fill.green{background:linear-gradient(to right,#70e050,#38c018);}
+  .fp-accum-fill.gold{background:linear-gradient(to right,#ffe050,#e09800);}
+  .fp-accum-fill.red{background:linear-gradient(to right,#ff7070,#e01818);}
+  .fp-accum-text{font-size:9px;font-weight:900;color:var(--sub);white-space:nowrap;}
+  .fp-info-days{font-size:11px;font-weight:900;padding:3px 10px;border-radius:12px;white-space:nowrap;}
+  .fp-info-days.overdue{background:linear-gradient(135deg,#ff6868,#e01818);color:#fff;animation:pulseRed 1.6s infinite;box-shadow:0 2px 8px rgba(220,20,20,.4);}
+  .fp-info-days.soon{background:linear-gradient(135deg,#ffe050,#e09800);color:#fff;box-shadow:0 2px 6px rgba(200,140,0,.3);}
+  .fp-info-days.growing{background:#e8ffd8;color:#2a8010;border:1.5px solid #a8e080;}
   .fp-info-days.none{display:none;}
-
-  /* 全体的な丸みアップ */
-  .plant-card{border-radius:18px !important;}
-  .card-head{border-radius:0 !important;}
-  .manage-section{border-radius:18px !important;}
-  .sheet{border-radius:24px 24px 0 0 !important;}
-  .bottom-nav{border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.12) !important;}
-  .summary .box{border-radius:16px !important;}
-  .fab{box-shadow:0 6px 20px rgba(58,122,40,.5) !important;}
 </style>
 </head>
 <body>
@@ -1042,10 +901,10 @@ function renderSummary(){
     }
   }
   document.getElementById('summary').innerHTML = `
-    <div class="box red"><div class="num">${red}</div><div class="lbl">収穫適期</div></div>
-    <div class="box gold"><div class="num">${gold}</div><div class="lbl">まもなく</div></div>
-    <div class="box green"><div class="num">${green}</div><div class="lbl">生育中</div></div>
-    <div class="box"><div class="num">${total}</div><div class="lbl">総着果数</div></div>
+    <div class="box red"><div class="ico">🍉</div><div class="num">${red}</div><div class="lbl">収穫適期</div></div>
+    <div class="box gold"><div class="ico">⏰</div><div class="num">${gold}</div><div class="lbl">まもなく</div></div>
+    <div class="box green"><div class="ico">🌱</div><div class="num">${green}</div><div class="lbl">生育中</div></div>
+    <div class="box"><div class="ico">🌼</div><div class="num">${total}</div><div class="lbl">総着果数</div></div>
   `;
 }
 
