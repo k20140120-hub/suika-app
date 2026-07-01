@@ -405,6 +405,18 @@
   .block-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   .block-btn .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--red);border:2px solid #fff;}
 
+  /* ===== 同期ステータスドット ===== */
+  .sync-dot{
+    width:10px;height:10px;border-radius:50%;flex:0 0 auto;
+    border:2px solid rgba(255,255,255,.4);
+    transition:background .3s;
+  }
+  .sync-dot.offline{background:#888;}
+  .sync-dot.syncing{background:#f0c040;animation:syncPulse .8s infinite;}
+  .sync-dot.ok{background:#4cdb6a;}
+  .sync-dot.error{background:var(--red);}
+  @keyframes syncPulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
   .empty{padding:56px 24px;text-align:center;color:var(--sub);font-size:14px;line-height:1.8;}
   .empty::before{content:"🌱";display:block;font-size:48px;margin-bottom:12px;}
   .empty-cta{display:inline-block;margin-top:12px;padding:10px 24px;border-radius:20px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;border:none;}
@@ -554,7 +566,10 @@
 <header>
   <div class="header-row1">
     <h1>🍉 スイカ栽培管理</h1>
-    <span class="header-date" id="headerDate"></span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="sync-dot offline" id="syncDot" title="未接続"></span>
+      <span class="header-date" id="headerDate"></span>
+    </div>
   </div>
   <div class="header-row2">
     <span class="loc">📍 岡崎市美合町</span>
@@ -666,37 +681,153 @@
 <script>
 /* ===================== 定数 ===================== */
 const DEFAULT_TARGET = 800;
-const LAT = 34.930, LON = 137.165; // 岡崎市美合町 おおよその座標
+const LAT = 34.930, LON = 137.165;
 const STORE_KEY = 'suikaAppData_v2';
+const DB_URL_KEY = 'suikaFirebaseUrl';
 const VINES = ['西','東'];
 const COLOR_PRIORITY = { red:4, gold:3, green:2, blue:1, gray:0 };
 const STATUS_ICON = { '収穫適期':'🔴', 'まもなく':'🟡', '生育中':'🌱', '着果(日付未定)':'🌼', '収穫済み':'🍉', '落花・摘果':'💤', '未着果':'🌑' };
 
 /* ===================== 状態 ===================== */
-let state = loadData();
+let state = { plants: [], tempLog: {} };
 let currentBlock = 0;
 let bulkMode = false;
-let currentTab = 'list'; // 'list' | 'map' | 'manage'
+let currentTab = 'list';
 let detailPlantId = null;
 let detailVine = '西';
 let detailFlowerIdx = 0;
+let dbUrl = localStorage.getItem(DB_URL_KEY) || '';
+let syncStatus = 'offline'; // 'offline' | 'syncing' | 'ok' | 'error'
+let lastSyncTime = null;
+let syncTimer = null;
 
-function loadData(){
+/* ===================== データマイグレーション ===================== */
+function migrateData(data){
+  if(!data || typeof data !== 'object') return { plants:[], tempLog:{} };
+  if(!data.plants) data.plants = [];
+  if(!data.tempLog) data.tempLog = {};
+  for(const p of data.plants){
+    if(!p.vines) p.vines = { 西:[], 東:[], sub:[] };
+    if(!p.vines.sub) p.vines.sub = Array.from({length:6}, () => ({mark:'none',date:'',harvested:false}));
+    if(p.extraSide === undefined) p.extraSide = null;
+  }
+  return data;
+}
+
+/* ===================== ローカルストレージ ===================== */
+function loadLocal(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
-    if(raw){
-      const data = JSON.parse(raw);
-      // 旧データ移行: vines.subがない株に追加
-      for(const p of (data.plants||[])){
-        if(!p.vines.sub) p.vines.sub = Array.from({length:6}, () => ({mark:'none',date:'',harvested:false}));
-        if(p.extraSide === undefined) p.extraSide = null;
-      }
-      return data;
-    }
-  }catch(e){}
-  return { plants: [], tempLog: {} };
+    return raw ? migrateData(JSON.parse(raw)) : { plants:[], tempLog:{} };
+  }catch(e){ return { plants:[], tempLog:{} }; }
 }
-function saveData(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function saveLocal(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+/* ===================== Firebase REST ===================== */
+function setSyncStatus(s){
+  syncStatus = s;
+  if(currentTab === 'manage') renderManage();
+  // ヘッダーのステータスドット更新
+  const dot = document.getElementById('syncDot');
+  if(dot){
+    dot.className = 'sync-dot ' + s;
+    dot.title = {offline:'未接続', syncing:'同期中…', ok:'同期済み', error:'同期エラー'}[s] || '';
+  }
+}
+
+async function loadRemote(){
+  if(!dbUrl) return null;
+  try{
+    setSyncStatus('syncing');
+    const res = await fetch(`${dbUrl}/suikaData.json`, { cache:'no-store' });
+    if(!res.ok){ setSyncStatus('error'); return null; }
+    const data = await res.json();
+    setSyncStatus('ok');
+    lastSyncTime = new Date();
+    return data ? migrateData(data) : { plants:[], tempLog:{} };
+  }catch(e){ setSyncStatus('error'); return null; }
+}
+
+async function saveRemote(){
+  if(!dbUrl) return;
+  try{
+    setSyncStatus('syncing');
+    const res = await fetch(`${dbUrl}/suikaData.json`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(state)
+    });
+    setSyncStatus(res.ok ? 'ok' : 'error');
+    if(res.ok) lastSyncTime = new Date();
+  }catch(e){ setSyncStatus('error'); }
+}
+
+function saveData(){
+  saveLocal();
+  saveRemote();
+}
+
+async function syncFromRemote(){
+  const remote = await loadRemote();
+  if(!remote) return;
+  state = remote;
+  saveLocal();
+  renderAll();
+}
+
+function startSync(){
+  if(syncTimer) clearInterval(syncTimer);
+  if(!dbUrl) return;
+  syncTimer = setInterval(syncFromRemote, 30000);
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden) syncFromRemote();
+  });
+}
+
+async function connectDb(url){
+  dbUrl = url.trim().replace(/\/+$/, '');
+  localStorage.setItem(DB_URL_KEY, dbUrl);
+  const remote = await loadRemote();
+  if(remote){
+    state = remote;
+    saveLocal();
+    startSync();
+    renderAll();
+    return true;
+  }
+  return false;
+}
+
+function disconnectDb(){
+  dbUrl = '';
+  localStorage.removeItem(DB_URL_KEY);
+  if(syncTimer){ clearInterval(syncTimer); syncTimer = null; }
+  setSyncStatus('offline');
+}
+
+/* ===================== 初期化 ===================== */
+async function init(){
+  // まずローカルデータで表示
+  state = loadLocal();
+  renderAll();
+  fetchTemperature();
+
+  // Firebase接続があれば同期
+  if(dbUrl){
+    const remote = await loadRemote();
+    if(remote){
+      state = remote;
+      saveLocal();
+      renderAll();
+      startSync();
+    }
+  }
+
+  // ServiceWorker
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+}
 
 function emptyFruit(){ return { mark:'none', date:'', harvested:false }; }
 function newPlant(id, no, group){
@@ -951,7 +1082,40 @@ function renderManage(){
   const rec = state.tempLog[todayStr()];
   const tempStr = rec != null ? `${rec.value.toFixed ? rec.value.toFixed(1) : rec.value}℃` : '--.-℃';
   const manualFlag = rec?.manual ? ' ✏️手動' : '';
+  const syncLabel = { offline:'未接続', syncing:'同期中…', ok:'同期済み', error:'エラー' }[syncStatus] || '';
+  const syncColor = { offline:'#888', syncing:'#c8940a', ok:'#2d8a34', error:'var(--red)' }[syncStatus];
+  const lastSyncStr = lastSyncTime ? lastSyncTime.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}) : '---';
+
   document.getElementById('manageWrap').innerHTML = `
+    <div class="manage-section">
+      <div class="manage-section-title">☁️ データ共有（クラウド同期）</div>
+      <div style="padding:14px 16px 6px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:${syncColor};display:inline-block;flex:0 0 auto;"></span>
+          <span style="font-size:13px;font-weight:700;color:${syncColor};">${syncLabel}</span>
+          ${syncStatus==='ok' ? `<span style="font-size:11px;color:var(--sub);margin-left:auto;">最終同期 ${lastSyncStr}</span>` : ''}
+        </div>
+        ${dbUrl
+          ? `<div style="font-size:11px;color:var(--sub);background:var(--surface);border-radius:8px;padding:8px 10px;word-break:break-all;margin-bottom:10px;">${dbUrl}</div>
+             <div style="display:flex;gap:8px;">
+               <button class="tm-btn" id="mBtnSyncNow" style="flex:1;">今すぐ同期</button>
+               <button class="tm-btn" id="mBtnDisconnect" style="flex:1;color:var(--red);border-color:#fca5a1;">接続解除</button>
+             </div>`
+          : `<p style="font-size:12px;color:var(--sub);margin:0 0 10px;line-height:1.6;">FirebaseのDatabase URLを入力するとスマホ・PC・他のメンバーとデータをリアルタイムで共有できます。</p>
+             <div class="field" style="margin-bottom:8px;">
+               <input type="url" id="mDbUrlInput" placeholder="https://xxx-default-rtdb.firebaseio.com" style="font-size:12px;">
+             </div>
+             <button class="tm-btn" id="mBtnConnect" style="width:100%;background:var(--accent);color:#fff;border-color:var(--accent);">接続する</button>
+             <div id="mConnectResult" style="font-size:12px;margin-top:8px;min-height:16px;"></div>
+             <div style="margin-top:12px;background:#fff8e1;border-radius:10px;padding:10px 12px;font-size:11px;color:#7a5800;line-height:1.7;">
+               <strong>設定手順</strong><br>
+               1. <a href="https://console.firebase.google.com/" target="_blank" style="color:var(--accent);">Firebase Console</a> → 「プロジェクトを追加」<br>
+               2. 「Realtime Database」→「データベースを作成」→「テストモード」<br>
+               3. データベースのURL（https://xxx-rtdb.firebaseio.com）をコピーして上に貼り付け
+             </div>`
+        }
+      </div>
+    </div>
     <div class="manage-section">
       <div class="manage-section-title">今日の気温</div>
       <div class="temp-manage">
@@ -986,8 +1150,35 @@ function renderManage(){
         <span class="row-arrow">›</span>
       </div>
     </div>
-    <div style="text-align:center;color:var(--sub);font-size:11px;padding:16px 0 4px;">スイカ栽培管理アプリ（ローカル保存版）</div>
+    <div style="text-align:center;color:var(--sub);font-size:11px;padding:16px 0 4px;">スイカ栽培管理アプリ</div>
   `;
+  // Firebase接続
+  document.getElementById('mBtnConnect')?.addEventListener('click', async () => {
+    const url = document.getElementById('mDbUrlInput').value.trim();
+    if(!url){ return; }
+    const result = document.getElementById('mConnectResult');
+    result.style.color = 'var(--sub)';
+    result.textContent = '接続中…';
+    const ok = await connectDb(url);
+    if(ok){
+      result.style.color = 'var(--green)';
+      result.textContent = '✅ 接続成功！データを同期しました';
+      setTimeout(() => renderManage(), 800);
+    } else {
+      result.style.color = 'var(--red)';
+      result.textContent = '❌ 接続できませんでした。URLを確認してください';
+    }
+  });
+  document.getElementById('mBtnSyncNow')?.addEventListener('click', async () => {
+    await syncFromRemote();
+    renderManage();
+  });
+  document.getElementById('mBtnDisconnect')?.addEventListener('click', () => {
+    if(!confirm('クラウド接続を解除します。データはこのデバイスに残ります。')) return;
+    disconnectDb();
+    renderManage();
+  });
+
   document.getElementById('mBtnManualTemp').addEventListener('click', () => {
     const cur = state.tempLog[todayStr()];
     const input = prompt('本日の気温（℃）を入力', cur ? cur.value : '');
@@ -1530,14 +1721,7 @@ document.getElementById('btnReset').addEventListener('click', () => {
   renderAll();
 });
 
-/* ===================== 初期化 ===================== */
-renderAll();
-fetchTemperature();
-
-/* ===================== サービスワーカー登録 ===================== */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
-}
+init();
 </script>
 </body>
 </html>
