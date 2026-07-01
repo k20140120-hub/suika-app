@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🍉 スイカ栽培管理</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a7a28">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="スイカ管理">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    /* ステータスカラー（少しやわらかく） */
+    --red:#e04040; --gold:#d4960c; --green:#3a9642; --blue:#2878cc; --gray:#8a9099;
+    /* UI カラー（温かみのある土色ベース） */
+    --bg:#f7f2e8; --card:#fffef9; --ink:#2d2a24; --sub:#7a7060;
+    --accent:#3a7a28; --accent2:#5aaa44;
+    --surface:#ede8db; --border:#ddd6c6;
+    --header-from:#3d7a2a; --header-to:#1e4f14;
+    --warm-yellow:#fff8e1;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    font-family:-apple-system,"Hiragino Sans","Yu Gothic UI",sans-serif;
+    background:var(--bg);color:var(--ink);
+    padding-bottom:48px;
+    font-size:14px;line-height:1.5;
+  }
+
+  /* ===== ヘッダー ===== */
+  header{
+    background:linear-gradient(150deg,var(--header-from) 0%,#2a6818 60%,var(--header-to) 100%);
+    color:#fff;padding:14px 16px 14px;
+    position:sticky;top:0;z-index:20;
+    box-shadow:0 3px 12px rgba(0,0,0,.22);
+  }
+  .header-row1{display:flex;align-items:center;justify-content:space-between;}
+  header h1{
+    margin:0;font-size:18px;font-weight:800;letter-spacing:.3px;
+    display:flex;align-items:center;gap:7px;
+    text-shadow:0 1px 3px rgba(0,0,0,.2);
+  }
+  .header-date{
+    font-size:12px;opacity:.9;font-weight:600;
+    background:rgba(255,255,255,.15);border-radius:8px;padding:3px 9px;
+  }
+  .header-row2{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+  .temp-block{display:flex;align-items:baseline;gap:6px;}
+  .temp-val{
+    font-size:28px;font-weight:800;cursor:pointer;letter-spacing:-.5px;
+    border-bottom:2px dashed rgba(255,255,255,.45);line-height:1;
+    transition:opacity .15s;
+  }
+  .temp-val:active{opacity:.7;}
+  .temp-label{font-size:11px;opacity:.8;}
+  .loc{font-size:11px;opacity:.75;display:flex;align-items:center;gap:3px;
+    background:rgba(255,255,255,.12);border-radius:6px;padding:2px 8px;}
+
+  /* ===== サマリー ===== */
+  .summary{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:8px;padding:12px 12px 8px;
+  }
+  .summary .box{
+    background:var(--card);border-radius:12px;
+    padding:10px 6px 8px;text-align:center;
+    box-shadow:0 1px 4px rgba(0,0,0,.07);
+    border-bottom:3px solid transparent;
+  }
+  .summary .box .num{font-size:22px;font-weight:800;line-height:1;letter-spacing:-.5px;}
+  .summary .box .lbl{font-size:10px;color:var(--sub);margin-top:3px;font-weight:500;}
+  .summary .box.red{border-bottom-color:var(--red);}
+  .summary .box.red .num{color:var(--red);}
+  .summary .box.gold{border-bottom-color:var(--gold);}
+  .summary .box.gold .num{color:var(--gold);}
+  .summary .box.green{border-bottom-color:var(--green);}
+  .summary .box.green .num{color:var(--green);}
+
+  /* ===== ツールバー ===== */
+  .toolbar{
+    display:flex;align-items:center;gap:6px;
+    padding:4px 12px 10px;flex-wrap:wrap;
+  }
+  .toolbar button{
+    font-size:12px;font-weight:600;
+    padding:8px 12px;border-radius:20px;
+    border:1.5px solid var(--border);
+    background:var(--card);color:var(--ink);
+    cursor:pointer;transition:all .12s;
+    white-space:nowrap;
+  }
+  .toolbar button:active{transform:scale(.96);}
+  .toolbar button.primary{
+    background:var(--accent);color:#fff;
+    border-color:var(--accent);
+    box-shadow:0 2px 6px rgba(45,107,34,.35);
+  }
+  .toolbar button.view-active{
+    background:var(--accent);color:#fff;border-color:var(--accent);
+  }
+  .toolbar-sep{width:1px;height:24px;background:var(--border);margin:0 2px;flex:0 0 auto;}
+  .toolbar-danger{color:#b00020!important;border-color:#f5c6cb!important;}
+
+  /* ===== 区画ナビ ===== */
+  .block-nav{
+    display:flex;gap:6px;flex-wrap:wrap;
+    padding:6px 12px 10px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+  }
+  .block-btn{
+    position:relative;display:flex;align-items:center;gap:4px;
+    padding:6px 14px;border-radius:20px;
+    border:1.5px solid var(--border);
+    background:var(--card);font-size:12px;font-weight:600;
+    cursor:pointer;transition:all .12s;color:var(--sub);
+  }
+  .block-btn:active{transform:scale(.96);}
+  .block-btn .icon{font-size:14px;}
+  .block-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);
+    box-shadow:0 2px 8px rgba(45,107,34,.3);}
+  .block-btn .dot{
+    position:absolute;top:-3px;right:-3px;
+    width:10px;height:10px;border-radius:50%;
+    background:var(--red);box-shadow:0 0 0 2px #fff;
+  }
+
+  /* ===== 株カード ===== */
+  .plant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px;padding:10px 12px;}
+  .plant-card{
+    border-radius:14px;padding:0;
+    box-shadow:0 1px 5px rgba(0,0,0,.09);
+    cursor:pointer;border:1.5px solid var(--border);
+    display:flex;flex-direction:column;
+    overflow:hidden;
+    transition:transform .12s,box-shadow .12s;
+    background:var(--card);
+  }
+  .plant-card:active{transform:scale(.97);box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  /* ステータス別アクセント */
+  .plant-card.grad-red{border-color:#fca5a1;}
+  .plant-card.grad-gold{border-color:#f0d070;}
+  .plant-card.grad-green{border-color:#86c98a;}
+  .plant-card.grad-blue{border-color:#93bce8;}
+  .plant-card.grad-gray{border-color:var(--border);}
+  /* 上部カラーストリップ */
+  .card-strip{height:4px;width:100%;}
+  .grad-red .card-strip{background:var(--red);}
+  .grad-gold .card-strip{background:var(--gold);}
+  .grad-green .card-strip{background:var(--green);}
+  .grad-blue .card-strip{background:var(--blue);}
+  .grad-gray .card-strip{background:var(--border);}
+  .card-body{padding:10px 10px 8px;}
+  .plant-card.pulse{animation:pulseRed 1.8s infinite;}
+  @keyframes pulseRed{
+    0%{box-shadow:0 0 0 0 rgba(217,48,37,.4);}
+    65%{box-shadow:0 0 0 8px rgba(217,48,37,0);}
+    100%{box-shadow:0 0 0 0 rgba(217,48,37,0);}
+  }
+  .plant-card .pname{font-weight:800;font-size:15px;letter-spacing:-.2px;}
+  .plant-card .ptag{
+    display:inline-block;font-size:10px;font-weight:600;
+    color:var(--accent);background:#e8f5e4;
+    border-radius:4px;padding:1px 5px;margin-top:1px;
+  }
+  .plant-card .cardtop{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px;}
+  .plant-card .badge{
+    display:inline-flex;align-items:center;gap:3px;
+    font-size:10px;font-weight:700;
+    color:#fff;border-radius:6px;padding:3px 7px;
+    align-self:flex-start;letter-spacing:.2px;
+  }
+  .badge.red,.dot-flower.red{background:var(--red);}
+  .badge.gold,.dot-flower.gold{background:var(--gold);}
+  .badge.green,.dot-flower.green{background:var(--green);}
+  .badge.blue,.dot-flower.blue{background:var(--blue);}
+  .badge.gray,.dot-flower.gray{background:var(--gray);}
+  .vine-row{display:flex;align-items:center;gap:4px;margin-top:3px;}
+  .vine-label{
+    font-size:9px;font-weight:700;color:#fff;
+    background:var(--accent);border-radius:3px;
+    width:16px;height:14px;display:flex;align-items:center;justify-content:center;
+    flex:0 0 auto;
+  }
+  .flower-dots{display:flex;gap:3px;flex-wrap:wrap;}
+  .dot-flower{width:16px;height:16px;border-radius:50%;font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .gauge-wrap{position:relative;width:44px;height:44px;flex:0 0 auto;}
+  .gauge-wrap svg{display:block;}
+  .gauge-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--ink);}
+  .accum-text{font-size:10px;color:var(--sub);margin-top:4px;font-weight:500;}
+
+  .empty{
+    padding:48px 24px;text-align:center;color:var(--sub);
+    font-size:14px;line-height:1.7;
+  }
+  .empty::before{content:"🌱";display:block;font-size:36px;margin-bottom:10px;}
+
+  /* ===== モーダル ===== */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(0,0,0,.5);
+    display:none;align-items:flex-end;justify-content:center;
+    z-index:50;backdrop-filter:blur(2px);
+  }
+  .overlay.show{display:flex;}
+  .sheet{
+    background:#fff;width:100%;max-width:520px;
+    max-height:90vh;overflow-y:auto;
+    border-radius:20px 20px 0 0;
+    padding:0;
+    box-shadow:0 -4px 24px rgba(0,0,0,.15);
+  }
+  .sheet-handle{
+    width:36px;height:4px;background:#d1d5db;border-radius:2px;
+    margin:12px auto 0;
+  }
+  .sheet-inner{padding:12px 16px 24px;}
+  .sheet h2{margin:0 0 14px;font-size:17px;font-weight:800;}
+  .sheet .close-btn{
+    float:right;border:none;background:var(--surface);
+    width:28px;height:28px;border-radius:50%;
+    font-size:14px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--sub);
+  }
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:9px 10px;
+    border:1.5px solid var(--border);border-radius:10px;
+    font-size:14px;font-family:inherit;
+    background:#fafaf8;transition:border-color .12s;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{
+    outline:none;border-color:var(--accent);background:#fff;
+  }
+  .vine-toggle{display:flex;gap:6px;margin-bottom:10px;}
+  .vine-toggle button{
+    flex:1;padding:9px;border-radius:10px;
+    border:1.5px solid var(--border);background:#fafaf8;
+    font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;
+  }
+  .vine-toggle button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .flower-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;}
+  .flower-tab{
+    flex:0 0 auto;padding:6px 12px;border-radius:20px;
+    border:1.5px solid var(--border);background:#fafaf8;
+    font-size:12px;font-weight:600;cursor:pointer;transition:all .12s;
+  }
+  .flower-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .row2{display:flex;gap:8px;}
+  .row2 > .field{flex:1;}
+  .status-pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#fff;border-radius:8px;padding:4px 10px;}
+  .help-text{font-size:12px;color:var(--sub);background:var(--surface);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.6;}
+
+  /* ===== 一括編集テーブル ===== */
+  table.bulk{width:100%;border-collapse:collapse;font-size:10px;}
+  table.bulk th,table.bulk td{border:1px solid var(--border);padding:4px;text-align:center;}
+  table.bulk th{background:var(--surface);position:sticky;top:0;font-weight:700;font-size:9px;}
+  table.bulk input[type=date]{width:84px;font-size:9px;}
+  table.bulk input[type=text]{width:48px;font-size:9px;}
+  table.bulk select{font-size:9px;width:50px;}
+  .bulk-wrap{overflow-x:auto;padding:0 12px;}
+  .plantname-cell{white-space:nowrap;font-weight:800;}
+
+  /* ===== ボトムナビ ===== */
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;
+    height:60px;
+    background:var(--card);
+    border-top:1px solid var(--border);
+    display:flex;z-index:30;
+    box-shadow:0 -2px 16px rgba(0,0,0,.1);
+  }
+  .nav-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:2px;border:none;background:none;cursor:pointer;
+    color:var(--sub);padding:6px 0;
+    transition:color .15s;font-family:inherit;
+  }
+  .nav-btn .nav-icon{font-size:22px;line-height:1;}
+  .nav-btn .nav-label{font-size:10px;font-weight:700;letter-spacing:.3px;}
+  .nav-btn.active{color:var(--accent);}
+  .nav-btn .nav-badge{
+    position:absolute;top:6px;
+    width:8px;height:8px;border-radius:50%;
+    background:var(--red);border:2px solid #fff;
+  }
+  .nav-btn{position:relative;}
+
+  /* ===== FAB ===== */
+  .fab{
+    position:fixed;right:16px;bottom:72px;
+    width:54px;height:54px;border-radius:50%;
+    background:var(--accent);color:#fff;
+    border:none;font-size:26px;font-weight:300;
+    cursor:pointer;
+    box-shadow:0 4px 16px rgba(45,107,34,.45);
+    display:flex;align-items:center;justify-content:center;
+    z-index:25;transition:transform .15s,box-shadow .15s;
+  }
+  .fab:active{transform:scale(.93);box-shadow:0 2px 8px rgba(45,107,34,.3);}
+
+  /* ===== 収穫アラート ===== */
+  .harvest-alert{
+    margin:10px 12px 0;border-radius:12px;
+    background:linear-gradient(135deg,#d93025,#b71c1c);
+    color:#fff;padding:10px 14px;
+    display:flex;align-items:center;gap:10px;
+    box-shadow:0 2px 10px rgba(217,48,37,.35);
+    cursor:pointer;animation:pulseRed 2s infinite;
+  }
+  .harvest-alert .alert-icon{font-size:24px;flex:0 0 auto;}
+  .harvest-alert .alert-text .alert-title{font-weight:800;font-size:14px;}
+  .harvest-alert .alert-text .alert-sub{font-size:11px;opacity:.9;margin-top:1px;}
+  .harvest-alert .alert-arrow{margin-left:auto;font-size:18px;opacity:.8;}
+
+  /* ===== 管理パネル ===== */
+  .manage-wrap{padding:12px;}
+  .manage-section{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+  .manage-section-title{font-size:11px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;padding:12px 16px 6px;}
+  .manage-row{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;border-top:1px solid var(--surface);
+    cursor:pointer;transition:background .1s;
+  }
+  .manage-row:first-of-type{border-top:none;}
+  .manage-row:active{background:var(--surface);}
+  .manage-row .row-icon{font-size:22px;flex:0 0 auto;width:32px;text-align:center;}
+  .manage-row .row-info .row-title{font-size:14px;font-weight:700;}
+  .manage-row .row-info .row-sub{font-size:11px;color:var(--sub);margin-top:1px;}
+  .manage-row .row-arrow{margin-left:auto;color:var(--border);font-size:16px;}
+  .manage-row.danger .row-title{color:var(--red);}
+
+  /* 管理タブ：温度表示 */
+  .temp-manage{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px;border-top:1px solid var(--surface);
+  }
+  .temp-manage .tm-val{font-size:28px;font-weight:800;color:var(--ink);letter-spacing:-.5px;}
+  .temp-manage .tm-label{font-size:11px;color:var(--sub);margin-top:2px;}
+  .temp-manage .tm-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);}
+
+  /* ===== 株カード（新デザイン） ===== */
+  .plant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;padding:8px 12px;}
+  .plant-card{
+    border-radius:16px;overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    cursor:pointer;background:var(--card);
+    transition:transform .12s;
+    display:flex;flex-direction:column;
+  }
+  .plant-card:active{transform:scale(.96);}
+  .card-head{
+    padding:12px 12px 10px;
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .card-head.red{background:linear-gradient(135deg,#e53530,#c62828);}
+  .card-head.gold{background:linear-gradient(135deg,#c8940a,#a07008);}
+  .card-head.green{background:linear-gradient(135deg,#2d8a34,#1b6320);}
+  .card-head.blue{background:linear-gradient(135deg,#1a73c8,#1256a0);}
+  .card-head.gray{background:linear-gradient(135deg,#6b7280,#4b5563);}
+  .card-no{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1;}
+  .card-group-tag{font-size:10px;font-weight:700;color:rgba(255,255,255,.8);margin-top:1px;}
+  .card-status-row{display:flex;align-items:center;gap:4px;margin-top:6px;}
+  .card-status-icon{font-size:13px;}
+  .card-status-text{font-size:11px;font-weight:800;color:rgba(255,255,255,.95);}
+  .card-body{padding:8px 10px 10px;}
+  .card-vine-row{display:flex;align-items:center;gap:4px;margin-bottom:4px;}
+  .card-vine-lbl{
+    font-size:9px;font-weight:800;color:#fff;
+    background:var(--accent);border-radius:3px;
+    width:14px;height:14px;display:flex;align-items:center;justify-content:center;
+    flex:0 0 auto;
+  }
+  .card-dots{display:flex;gap:3px;flex-wrap:wrap;}
+  .card-dot{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;}
+  .card-dot.red{background:var(--red);}
+  .card-dot.gold{background:var(--gold);}
+  .card-dot.green{background:var(--green);}
+  .card-dot.blue{background:var(--blue);}
+  .card-dot.gray{background:#c8cbc5;}
+  .card-accum{font-size:10px;color:var(--sub);font-weight:600;margin-top:2px;}
+  .plant-card.pulse{animation:pulseRed 1.8s infinite;}
+
+  /* 区画ナビ（コンパクト） */
+  .block-nav{
+    display:flex;gap:6px;padding:8px 12px 6px;
+    overflow-x:auto;
+    background:transparent;border-bottom:none;
+  }
+  .block-nav::-webkit-scrollbar{display:none;}
+  .block-btn{
+    position:relative;display:flex;align-items:center;gap:4px;
+    padding:5px 12px;border-radius:16px;
+    border:1.5px solid var(--border);
+    background:var(--card);font-size:12px;font-weight:700;
+    cursor:pointer;color:var(--sub);white-space:nowrap;flex:0 0 auto;
+  }
+  .block-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .block-btn .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--red);border:2px solid #fff;}
+
+  .empty{padding:56px 24px;text-align:center;color:var(--sub);font-size:14px;line-height:1.8;}
+  .empty::before{content:"🌱";display:block;font-size:48px;margin-bottom:12px;}
+  .empty-cta{display:inline-block;margin-top:12px;padding:10px 24px;border-radius:20px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;border:none;}
+
+  /* ===== 圃場マップ ===== */
+  .map-wrap{padding:10px 12px;}
+  .map-legend{
+    display:flex;gap:8px;flex-wrap:wrap;
+    font-size:11px;font-weight:600;color:var(--sub);
+    margin-bottom:12px;align-items:center;
+    background:var(--card);border-radius:10px;padding:8px 12px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  .map-legend .sw{
+    display:inline-block;width:10px;height:10px;
+    border-radius:50%;margin-right:4px;vertical-align:middle;
+  }
+  .map-legend span{display:flex;align-items:center;}
+  .map-group{margin-bottom:24px;}
+  .map-group h3{
+    font-size:13px;font-weight:800;color:var(--accent);
+    margin:0 0 10px;padding:4px 0 6px;
+    border-bottom:2px solid var(--border);
+    display:flex;align-items:center;gap:6px;
+  }
+  .map-group h3::before{content:"🌾";font-size:14px;}
+
+  /* === 3本仕立て 千鳥畝ビュー === */
+  .field-lane{
+    display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+    background:linear-gradient(160deg,#ede8d8,#e2dcc8);
+    border-radius:14px;padding:20px 20px 32px;overflow-y:auto;
+    max-height:68vh;
+    box-shadow:inset 0 2px 8px rgba(0,0,0,.06);
+  }
+  /* 1株 */
+  .fp{
+    display:flex;flex-direction:column;gap:2px;
+    cursor:pointer;flex:0 0 auto;
+    transition:opacity .12s;border-radius:6px;
+    padding:2px 4px;
+  }
+  .fp:hover{opacity:.85;}
+  .fp:active{opacity:.7;}
+  /* 千鳥: 偶数株を右にずらす */
+  .fp.fp-even{margin-left:32px;}
+
+  /* 各ツル行 */
+  .fp-row{display:flex;align-items:center;min-height:16px;gap:3px;}
+
+  /* 西側ドットゾーン (右寄せ: 6番果が左端) */
+  .fp-w{
+    display:flex;gap:3px;align-items:center;
+    width:90px;justify-content:flex-end;flex:0 0 auto;
+  }
+  /* 東側ドットゾーン (左寄せ: 1番果が左端) */
+  .fp-e{
+    display:flex;gap:3px;align-items:center;
+    width:90px;justify-content:flex-start;flex:0 0 auto;
+  }
+  /* 中心ゾーン */
+  .fp-ctr{width:30px;height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
+
+  /* 株番号マーカー */
+  .fp-no{
+    width:28px;height:28px;border-radius:50%;
+    background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+    border:2.5px solid rgba(255,255,255,.6);
+    letter-spacing:-.3px;
+  }
+  .fp-no.col-red{background:var(--red);}
+  .fp-no.col-gold{background:var(--gold);}
+  .fp-no.pulse{animation:pulseRed 1.8s infinite;}
+
+  /* ツル方向ミスボタン */
+  .fp-flip{display:flex;justify-content:center;margin-top:2px;}
+  .fp-flip-btn{
+    font-size:8px;font-weight:600;
+    background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);
+    border-radius:4px;padding:1px 6px;cursor:pointer;
+    color:var(--sub);line-height:1.5;
+    transition:background .1s;
+  }
+  .fp-flip-btn:hover{background:#fff;}
+
+  /* 着果ドット */
+  .fp-dot{
+    width:13px;height:13px;border-radius:50%;flex:0 0 auto;
+    box-shadow:0 1px 2px rgba(0,0,0,.2);
+  }
+  .fp-dot.red{background:var(--red);}
+  .fp-dot.gold{background:var(--gold);}
+  .fp-dot.green{background:var(--green);}
+  .fp-dot.blue{background:var(--blue);}
+  .fp-dot.gray{background:#bbbeb8;}
+
+  /* 株情報ピル（圃場マップ内） */
+  .fp-info{
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    margin-top:4px;
+  }
+  .fp-info-date{
+    font-size:9px;font-weight:700;color:#5a4e38;
+    background:rgba(255,255,255,.75);border-radius:5px;
+    padding:1px 6px;letter-spacing:.2px;white-space:nowrap;
+  }
+  .fp-info-accum{
+    font-size:9px;font-weight:800;
+    padding:1px 6px;border-radius:5px;
+    white-space:nowrap;
+  }
+  .fp-info-accum.green{background:#d4f0d6;color:#1b6320;}
+  .fp-info-accum.gold{background:#fff0b3;color:#7a5800;}
+  .fp-info-accum.red{background:#ffd6d6;color:#b01010;}
+  .fp-info-accum.gray{background:rgba(255,255,255,.6);color:#888;}
+  .fp-info-days{
+    font-size:10px;font-weight:900;letter-spacing:-.3px;
+    padding:2px 8px;border-radius:10px;white-space:nowrap;
+  }
+  .fp-info-days.overdue{background:var(--red);color:#fff;animation:pulseRed 1.8s infinite;}
+  .fp-info-days.soon{background:var(--gold);color:#fff;}
+  .fp-info-days.growing{background:#e8f5e9;color:#2a7a32;border:1px solid #b2dfb4;}
+  .fp-info-days.none{display:none;}
+
+  /* 圃場マップ背景：土っぽく */
+  .field-lane{
+    background:linear-gradient(160deg,#ede8d4,#e0d9c0) !important;
+    border:1.5px solid #c8be9e;
+  }
+  .map-group h3{color:#5a7a28 !important;}
+
+  /* 全体的な丸みアップ */
+  .plant-card{border-radius:18px !important;}
+  .card-head{border-radius:0 !important;}
+  .manage-section{border-radius:18px !important;}
+  .sheet{border-radius:24px 24px 0 0 !important;}
+  .bottom-nav{border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.12) !important;}
+  .summary .box{border-radius:16px !important;}
+  .fab{box-shadow:0 6px 20px rgba(58,122,40,.5) !important;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row1">
+    <h1>🍉 スイカ栽培管理</h1>
+    <span class="header-date" id="headerDate"></span>
+  </div>
+  <div class="header-row2">
+    <span class="loc">📍 岡崎市美合町</span>
+    <div class="temp-block">
+      <span class="temp-val" id="tempVal" title="タップで手動入力">--.-℃</span>
+    </div>
+  </div>
+</header>
+
+<div id="harvestAlert" style="display:none;"></div>
+<div class="summary" id="summary"></div>
+
+<!-- タブ：株一覧 -->
+<div id="viewList">
+  <div class="block-nav" id="blockNav"></div>
+  <div class="plant-grid" id="plantGrid"></div>
+  <div class="bulk-wrap" id="bulkWrap" style="display:none;"></div>
+</div>
+
+<!-- タブ：圃場マップ -->
+<div id="viewMap" style="display:none;">
+  <div class="map-wrap" id="mapWrap"></div>
+</div>
+
+<!-- タブ：管理 -->
+<div id="viewManage" style="display:none;">
+  <div class="manage-wrap" id="manageWrap"></div>
+</div>
+
+<!-- FAB：株追加 -->
+<button class="fab" id="btnAddPlant" title="株を追加">＋</button>
+
+<!-- ボトムナビ -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navList">
+    <span class="nav-icon">📋</span>
+    <span class="nav-label">株一覧</span>
+  </button>
+  <button class="nav-btn" id="navMap">
+    <span class="nav-icon">🗺️</span>
+    <span class="nav-label">圃場</span>
+  </button>
+  <button class="nav-btn" id="navManage">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">管理</span>
+  </button>
+</nav>
+
+<!-- Plant detail modal -->
+<div class="overlay" id="detailOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-inner">
+      <button class="close-btn" id="closeDetail">✕</button>
+      <h2 id="detailTitle">株詳細</h2>
+      <div class="field">
+        <label>目標積算温度（℃）</label>
+        <input type="number" id="targetTempInput" min="0" step="10">
+      </div>
+      <div class="vine-toggle" id="vineToggle">
+        <button data-vine="西" id="vineBtnWest">🌿 西仕立て</button>
+        <button data-vine="東" id="vineBtnEast">🌿 東仕立て</button>
+      </div>
+      <div class="flower-tabs" id="flowerTabs"></div>
+      <div id="flowerDetailBody"></div>
+      <button id="btnDeletePlant" style="margin-top:14px;width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--red);background:#fff5f5;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;">この株を削除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add plant modal -->
+<div class="overlay" id="addOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-inner">
+      <button class="close-btn" id="closeAdd">✕</button>
+      <h2>＋ 株を追加</h2>
+      <div class="row2">
+        <div class="field"><label>株 No.</label><input type="number" id="newNo" min="1"></div>
+        <div class="field"><label>班（任意）</label><input type="text" id="newGroup" placeholder="例: 1班"></div>
+      </div>
+      <button class="primary" id="btnConfirmAdd" style="width:100%;padding:11px;border-radius:10px;font-size:14px;font-weight:700;border:none;background:var(--accent);color:#fff;cursor:pointer;">追加する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="overlay" id="importOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-inner">
+      <button class="close-btn" id="closeImport">✕</button>
+      <h2>📥 データ取込</h2>
+      <div class="help-text">
+        原票形式（班・西6〜西1・No.・東1〜東6、1株2行）または集計形式（No.・班・西6〜西1・東1〜東6、1株1行）に対応。<br>
+        Excelから範囲をコピーして貼り付け。タブ・カンマ区切り両対応。<br>
+        <strong>空欄</strong>=未着果　<strong>×</strong>=落花・摘果　<strong>○</strong>=着果　<strong>日付</strong>=受粉日
+      </div>
+      <div class="field">
+        <button id="btnLoadImageData" style="margin-bottom:8px;width:100%;padding:9px;border-radius:10px;border:1.5px solid var(--accent);background:#f0f8ee;color:var(--accent);cursor:pointer;font-size:13px;font-weight:700;">📷 2026/6/15 調査票サンプルを読み込む</button>
+        <textarea id="importText" rows="7" placeholder="Excelからコピーしたデータを貼り付け..."></textarea>
+      </div>
+      <div id="importResult" style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px;min-height:18px;"></div>
+      <button class="primary" id="btnDoImport" style="width:100%;padding:11px;border-radius:10px;font-size:14px;font-weight:700;border:none;background:var(--accent);color:#fff;cursor:pointer;">取込む（既存データを置き換え）</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== 定数 ===================== */
+const DEFAULT_TARGET = 800;
+const LAT = 34.930, LON = 137.165; // 岡崎市美合町 おおよその座標
+const STORE_KEY = 'suikaAppData_v2';
+const VINES = ['西','東'];
+const COLOR_PRIORITY = { red:4, gold:3, green:2, blue:1, gray:0 };
+const STATUS_ICON = { '収穫適期':'🔴', 'まもなく':'🟡', '生育中':'🌱', '着果(日付未定)':'🌼', '収穫済み':'🍉', '落花・摘果':'💤', '未着果':'🌑' };
+
+/* ===================== 状態 ===================== */
+let state = loadData();
+let currentBlock = 0;
+let bulkMode = false;
+let currentTab = 'list'; // 'list' | 'map' | 'manage'
+let detailPlantId = null;
+let detailVine = '西';
+let detailFlowerIdx = 0;
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      // 旧データ移行: vines.subがない株に追加
+      for(const p of (data.plants||[])){
+        if(!p.vines.sub) p.vines.sub = Array.from({length:6}, () => ({mark:'none',date:'',harvested:false}));
+        if(p.extraSide === undefined) p.extraSide = null;
+      }
+      return data;
+    }
+  }catch(e){}
+  return { plants: [], tempLog: {} };
+}
+function saveData(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+function emptyFruit(){ return { mark:'none', date:'', harvested:false }; }
+function newPlant(id, no, group){
+  return {
+    id, no, group: group || '',
+    target: DEFAULT_TARGET,
+    extraSide: null,   // null=自動(奇数→西2本,偶数→東2本), '西'or'東'でミス方向上書き
+    vines: {
+      西: Array.from({length:6}, emptyFruit),
+      東: Array.from({length:6}, emptyFruit),
+      sub: Array.from({length:6}, emptyFruit),  // 3本目のツル
+    }
+  };
+}
+function plantLabel(p){ return `No.${p.no}`; }
+
+/* ===================== 日付ユーティリティ ===================== */
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dateRange(start, end){
+  const out = [];
+  let d = new Date(start+'T00:00:00');
+  const e = new Date(end+'T00:00:00');
+  while(d <= e){
+    out.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+
+/* ===================== 積算温度・ステータス判定 ===================== */
+function computeAccum(dateStr){
+  if(!dateStr) return 0;
+  const days = dateRange(dateStr, todayStr());
+  let sum = 0;
+  for(const d of days){
+    const rec = state.tempLog[d];
+    if(rec != null) sum += (typeof rec === 'object' ? rec.value : rec);
+  }
+  return Math.round(sum*10)/10;
+}
+function fruitVisual(plant, fruit){
+  if(fruit.harvested) return { label:'収穫済み', color:'gray', accum:0 };
+  if(fruit.mark === 'x') return { label:'落花・摘果', color:'gray', accum:0 };
+  if(fruit.date){
+    const accum = computeAccum(fruit.date);
+    if(accum >= plant.target) return { label:'収穫適期', color:'red', accum };
+    if(accum >= plant.target*0.85) return { label:'まもなく', color:'gold', accum };
+    return { label:'生育中', color:'green', accum };
+  }
+  if(fruit.mark === 'o') return { label:'着果(日付未定)', color:'blue', accum:0 };
+  return { label:'未着果', color:'gray', accum:0 };
+}
+function gaugeSvg(ratio, color, size){
+  size = size || 46;
+  const stroke = 5, r = size/2 - stroke, c = size/2;
+  const circ = 2*Math.PI*r;
+  const offset = circ*(1-Math.max(0,Math.min(1,ratio)));
+  const strokeColor = color === 'gray' ? '#bbb' : `var(--${color})`;
+  return `<div class="gauge-wrap">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${c}" cy="${c}" r="${r}" stroke="#e6e6e6" stroke-width="${stroke}" fill="none"/>
+      <circle cx="${c}" cy="${c}" r="${r}" stroke="${strokeColor}" stroke-width="${stroke}" fill="none"
+        stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round"
+        transform="rotate(-90 ${c} ${c})"/>
+    </svg>
+    <div class="gauge-text">${Math.round(ratio*100)}%</div>
+  </div>`;
+}
+function allFruits(plant){
+  const out = [];
+  for(const vine of VINES){
+    plant.vines[vine].forEach((f,i) => out.push({ vine, idx:i, fruit:f }));
+  }
+  // 3本目のツル
+  (plant.vines.sub||[]).forEach((f,i) => out.push({ vine:'sub', idx:i, fruit:f }));
+  return out;
+}
+/* 受粉日・積算温度・残り日数予測 */
+function estimatePlantInfo(plant){
+  let best = null, bestAccum = -1;
+  for(const {fruit} of allFruits(plant)){
+    if(!fruit.date || fruit.mark==='x' || fruit.harvested) continue;
+    const a = computeAccum(fruit.date);
+    if(a > bestAccum){ bestAccum = a; best = fruit; }
+  }
+  if(!best) return null;
+  const accum = Math.round(bestAccum);
+  const remaining = plant.target - accum;
+  // 直近7日の平均気温で残り日数を推定
+  const today = todayStr();
+  const temps = [];
+  for(let i=0; i<7; i++){
+    const d = new Date(today+'T00:00:00');
+    d.setDate(d.getDate()-i);
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const rec = state.tempLog[key];
+    if(rec!=null) temps.push(typeof rec==='object'?rec.value:rec);
+  }
+  const avgTemp = temps.length ? temps.reduce((a,b)=>a+b,0)/temps.length : null;
+  const daysLeft = (remaining > 0 && avgTemp) ? Math.ceil(remaining/avgTemp) : (remaining<=0 ? 0 : null);
+  return { date: best.date, accum, remaining: Math.round(remaining), daysLeft };
+}
+
+function plantOverall(plant){
+  let best = null;
+  for(const {fruit} of allFruits(plant)){
+    const v = fruitVisual(plant, fruit);
+    if(!best || COLOR_PRIORITY[v.color] > COLOR_PRIORITY[best.color]) best = v;
+  }
+  return best || { label:'未着果', color:'gray', accum:0 };
+}
+function vineOverall(plant, vine){
+  let best = null;
+  plant.vines[vine].forEach(f => {
+    const v = fruitVisual(plant, f);
+    if(!best || COLOR_PRIORITY[v.color] > COLOR_PRIORITY[best.color]) best = v;
+  });
+  return best || { label:'未着果', color:'gray', accum:0 };
+}
+
+/* ===================== 気温取得 ===================== */
+async function fetchTemperature(){
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&daily=temperature_2m_mean&past_days=92&timezone=Asia%2FTokyo`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const times = data.daily.time, temps = data.daily.temperature_2m_mean;
+    for(let i=0;i<times.length;i++){
+      const d = times[i], v = temps[i];
+      if(v == null) continue;
+      const existing = state.tempLog[d];
+      if(!existing || !existing.manual){
+        state.tempLog[d] = { value: v, manual:false };
+      }
+    }
+    saveData();
+  }catch(e){
+    console.warn('気温取得に失敗', e);
+  }
+  renderHeaderTemp();
+}
+function renderHeaderTemp(){
+  const rec = state.tempLog[todayStr()];
+  const el = document.getElementById('tempVal');
+  el.textContent = rec != null ? `${rec.value.toFixed ? rec.value.toFixed(1) : rec.value}℃` : '--.-℃';
+  // 日付表示
+  const d = new Date();
+  const dateEl = document.getElementById('headerDate');
+  if(dateEl) dateEl.textContent = `${d.getMonth()+1}月${d.getDate()}日`;
+}
+document.getElementById('tempVal').addEventListener('click', () => {
+  const cur = state.tempLog[todayStr()];
+  const input = prompt('本日の気温（℃）を手動入力してください', cur ? cur.value : '');
+  if(input === null || input.trim() === '') return;
+  const v = parseFloat(input);
+  if(isNaN(v)) return alert('数値を入力してください');
+  state.tempLog[todayStr()] = { value:v, manual:true };
+  saveData(); renderAll();
+});
+// 気温更新ボタンは管理パネルから呼ぶ
+
+/* ===================== レンダリング ===================== */
+function blocks(){
+  const chunks = [];
+  for(let i=0;i<state.plants.length;i+=10) chunks.push(state.plants.slice(i,i+10));
+  return chunks;
+}
+
+function renderSummary(){
+  let red=0,gold=0,green=0,total=0;
+  for(const p of state.plants){
+    for(const {fruit} of allFruits(p)){
+      if(fruit.mark === 'none' && !fruit.date) continue;
+      total++;
+      const v = fruitVisual(p, fruit);
+      if(v.color==='red') red++;
+      else if(v.color==='gold') gold++;
+      else if(v.color==='green') green++;
+    }
+  }
+  document.getElementById('summary').innerHTML = `
+    <div class="box red"><div class="num">${red}</div><div class="lbl">収穫適期</div></div>
+    <div class="box gold"><div class="num">${gold}</div><div class="lbl">まもなく</div></div>
+    <div class="box green"><div class="num">${green}</div><div class="lbl">生育中</div></div>
+    <div class="box"><div class="num">${total}</div><div class="lbl">総着果数</div></div>
+  `;
+}
+
+function renderBlockNav(){
+  const bs = blocks();
+  const nav = document.getElementById('blockNav');
+  if(currentBlock >= bs.length) currentBlock = Math.max(0, bs.length-1);
+  if(bs.length === 0){ nav.innerHTML = ''; return; }
+  // 班名でラベリング（グループ名を優先）
+  nav.innerHTML = bs.map((b, i) => {
+    const hasRed = b.some(p => plantOverall(p).color === 'red');
+    const label = b[0]?.group || `区画${i+1}`;
+    return `<button class="block-btn ${i===currentBlock?'active':''}" data-i="${i}">${label}${hasRed?'<span class="dot"></span>':''}</button>`;
+  }).join('');
+  nav.querySelectorAll('.block-btn').forEach(btn => {
+    btn.addEventListener('click', () => { currentBlock = parseInt(btn.dataset.i); renderAll(); });
+  });
+}
+
+function renderPlantGrid(){
+  const grid = document.getElementById('plantGrid');
+  const bs = blocks();
+  const list = bs[currentBlock] || [];
+  if(list.length === 0){
+    grid.innerHTML = `<div class="empty">株がまだありません<br><button class="empty-cta" id="emptyAdd">＋ 最初の株を追加</button></div>`;
+    grid.querySelector('#emptyAdd')?.addEventListener('click', () => document.getElementById('addOverlay').classList.add('show'));
+    return;
+  }
+  grid.innerHTML = list.map(p => {
+    const overall = plantOverall(p);
+    const dot = (vine) => p.vines[vine].map((f,i) => {
+      const v = fruitVisual(p,f);
+      return `<div class="card-dot ${v.color}" title="${vine}${i+1}番果 ${v.label}">${i+1}</div>`;
+    }).join('');
+    let barFruit = null;
+    allFruits(p).forEach(({fruit}) => {
+      if(!fruit.date || fruit.mark==='x' || fruit.harvested) return;
+      const v = fruitVisual(p,fruit);
+      if(!barFruit || v.accum > barFruit.accum) barFruit = v;
+    });
+    const icon = STATUS_ICON[overall.label] || '🌑';
+    return `<div class="plant-card ${overall.color==='red'?'pulse':''}" data-id="${p.id}">
+      <div class="card-head ${overall.color}">
+        <div class="card-no">No.${p.no}</div>
+        ${p.group?`<div class="card-group-tag">${p.group}</div>`:''}
+        <div class="card-status-row">
+          <span class="card-status-icon">${icon}</span>
+          <span class="card-status-text">${overall.label}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-vine-row"><span class="card-vine-lbl">西</span><div class="card-dots">${dot('西')}</div></div>
+        <div class="card-vine-row"><span class="card-vine-lbl">東</span><div class="card-dots">${dot('東')}</div></div>
+        <div class="card-accum">${barFruit ? `🌡 ${barFruit.accum}℃ / ${p.target}℃` : '受粉前'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.plant-card').forEach(el => {
+    el.addEventListener('click', () => openDetail(parseInt(el.dataset.id)));
+  });
+}
+
+function renderManage(){
+  const rec = state.tempLog[todayStr()];
+  const tempStr = rec != null ? `${rec.value.toFixed ? rec.value.toFixed(1) : rec.value}℃` : '--.-℃';
+  const manualFlag = rec?.manual ? ' ✏️手動' : '';
+  document.getElementById('manageWrap').innerHTML = `
+    <div class="manage-section">
+      <div class="manage-section-title">今日の気温</div>
+      <div class="temp-manage">
+        <div>
+          <div class="tm-val">${tempStr}</div>
+          <div class="tm-label">岡崎市美合町${manualFlag}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="tm-btn" id="mBtnManualTemp">手動入力</button>
+          <button class="tm-btn" id="mBtnRefreshTemp">API更新</button>
+        </div>
+      </div>
+    </div>
+    <div class="manage-section">
+      <div class="manage-section-title">データ</div>
+      <div class="manage-row" id="mBtnImport">
+        <span class="row-icon">📥</span>
+        <div class="row-info"><div class="row-title">着果調査データを取込む</div><div class="row-sub">ExcelデータをコピーしてインポートできmaS</div></div>
+        <span class="row-arrow">›</span>
+      </div>
+      <div class="manage-row" id="mBtnBulkEdit">
+        <span class="row-icon">📋</span>
+        <div class="row-info"><div class="row-title">一括編集</div><div class="row-sub">全株のマーク・受粉日をまとめて編集</div></div>
+        <span class="row-arrow">›</span>
+      </div>
+    </div>
+    <div class="manage-section">
+      <div class="manage-section-title">危険な操作</div>
+      <div class="manage-row danger" id="mBtnReset">
+        <span class="row-icon">🗑️</span>
+        <div class="row-info"><div class="row-title">全データを削除</div><div class="row-sub">この操作は取り消せません</div></div>
+        <span class="row-arrow">›</span>
+      </div>
+    </div>
+    <div style="text-align:center;color:var(--sub);font-size:11px;padding:16px 0 4px;">スイカ栽培管理アプリ（ローカル保存版）</div>
+  `;
+  document.getElementById('mBtnManualTemp').addEventListener('click', () => {
+    const cur = state.tempLog[todayStr()];
+    const input = prompt('本日の気温（℃）を入力', cur ? cur.value : '');
+    if(input===null || input.trim()==='') return;
+    const v = parseFloat(input);
+    if(isNaN(v)) return alert('数値を入力してください');
+    state.tempLog[todayStr()] = {value:v, manual:true};
+    saveData(); renderAll();
+  });
+  document.getElementById('mBtnRefreshTemp').addEventListener('click', () => fetchTemperature().then(renderManage));
+  document.getElementById('mBtnImport').addEventListener('click', () => document.getElementById('importOverlay').classList.add('show'));
+  document.getElementById('mBtnBulkEdit').addEventListener('click', () => {
+    bulkMode = true; currentTab = 'list';
+    switchTab('list'); renderAll();
+  });
+  document.getElementById('mBtnReset').addEventListener('click', () => {
+    if(!confirm('全データを削除して初期化しますか？この操作は取り消せません。')) return;
+    state = {plants:[],tempLog:{}}; saveData(); currentBlock=0; bulkMode=false;
+    renderAll();
+  });
+}
+
+function renderHarvestAlert(){
+  const redPlants = state.plants.filter(p => plantOverall(p).color === 'red');
+  const el = document.getElementById('harvestAlert');
+  if(redPlants.length === 0){ el.style.display='none'; return; }
+  el.style.display='';
+  el.innerHTML = `<div class="harvest-alert" id="alertClick">
+    <span class="alert-icon">🔴</span>
+    <div class="alert-text">
+      <div class="alert-title">収穫適期 ${redPlants.length}株</div>
+      <div class="alert-sub">${redPlants.map(p=>`No.${p.no}`).join('・')} をご確認ください</div>
+    </div>
+    <span class="alert-arrow">›</span>
+  </div>`;
+  document.getElementById('alertClick').addEventListener('click', () => {
+    switchTab('list'); openDetail(redPlants[0].id);
+  });
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.getElementById('viewList').style.display  = tab==='list'   ? '' : 'none';
+  document.getElementById('viewMap').style.display   = tab==='map'    ? '' : 'none';
+  document.getElementById('viewManage').style.display= tab==='manage' ? '' : 'none';
+  document.getElementById('btnAddPlant').style.display = tab==='list' ? '' : 'none';
+  ['navList','navMap','navManage'].forEach(id => document.getElementById(id).classList.remove('active'));
+  const tabMap = {list:'navList', map:'navMap', manage:'navManage'};
+  document.getElementById(tabMap[tab]).classList.add('active');
+  // 収穫アラートバッジ
+  const hasRed = state.plants.some(p => plantOverall(p).color === 'red');
+  document.getElementById('navList').querySelector('.nav-badge')?.remove();
+  if(hasRed && tab !== 'list'){
+    const b = document.createElement('span');
+    b.className = 'nav-badge';
+    document.getElementById('navList').appendChild(b);
+  }
+}
+
+function renderAll(){
+  renderHeaderTemp();
+  renderSummary();
+  renderHarvestAlert();
+  if(currentTab === 'list'){
+    renderBlockNav();
+    if(bulkMode){ renderBulkEdit(); document.getElementById('plantGrid').style.display='none'; document.getElementById('bulkWrap').style.display=''; }
+    else{ renderPlantGrid(); document.getElementById('plantGrid').style.display=''; document.getElementById('bulkWrap').style.display='none'; }
+  } else if(currentTab === 'map'){
+    renderFieldMap();
+  } else if(currentTab === 'manage'){
+    renderManage();
+  }
+  switchTab(currentTab);
+}
+
+/* ===================== 圃場マップ（3本仕立て 千鳥畝ビュー） ===================== */
+function renderFieldMap(){
+  const wrap = document.getElementById('mapWrap');
+  if(state.plants.length === 0){ wrap.innerHTML = '<div class="empty">株がありません</div>'; return; }
+
+  const groups = {};
+  for(const p of state.plants){
+    const g = p.group || '未分類';
+    if(!groups[g]) groups[g] = [];
+    groups[g].push(p);
+  }
+
+  // ドット生成
+  function dot(plant, fruit, vineName, fruitIdx){
+    const v = fruitVisual(plant, fruit);
+    const tip = `${vineName}${fruitIdx+1}番果: ${v.label}${fruit.date?' ('+fruit.date+')':''}`;
+    return `<div class="fp-dot ${v.color}" title="${tip}"></div>`;
+  }
+  // 西側ドット列: 6番果(左)→1番果(右) で右寄せ
+  function wDots(plant, vineKey, label){
+    const fruits = plant.vines[vineKey] || [];
+    return `<div class="fp-w">${[...fruits].reverse().map((f,i) => dot(plant, f, label, 5-i)).join('')}</div>`;
+  }
+  // 東側ドット列: 1番果(左)→6番果(右)
+  function eDots(plant, vineKey, label){
+    const fruits = plant.vines[vineKey] || [];
+    return `<div class="fp-e">${fruits.map((f,i) => dot(plant, f, label, i)).join('')}</div>`;
+  }
+  // 空ゾーン
+  const emW = `<div class="fp-w"></div>`;
+  const emE = `<div class="fp-e"></div>`;
+  const emC = `<div class="fp-ctr"></div>`;
+
+  let html = `
+    <div class="map-legend">
+      <span><span class="sw" style="background:var(--red);"></span>収穫適期</span>
+      <span><span class="sw" style="background:var(--gold);"></span>まもなく</span>
+      <span><span class="sw" style="background:var(--green);"></span>生育中</span>
+      <span><span class="sw" style="background:var(--blue);"></span>着果(日付未定)</span>
+      <span><span class="sw" style="background:#ccc;"></span>未着果・落花等</span>
+      <span style="margin-left:8px;font-size:10px;color:#aaa;">西← [株No.] →東 / 奇数株=西2本+東1本 / 偶数株=東2本+西1本</span>
+    </div>
+  `;
+
+  for(const g of Object.keys(groups)){
+    const plantHtml = groups[g].map((p) => {
+      const overall = plantOverall(p);
+      const noCol = overall.color==='red' ? 'col-red' : overall.color==='gold' ? 'col-gold' : '';
+      const pulseCls = overall.color==='red' ? 'pulse' : '';
+      const noDiv = `<div class="fp-ctr"><div class="fp-no ${noCol} ${pulseCls}">${p.no}</div></div>`;
+
+      // extraSide: nullなら株番号の奇偶で決定, '西'or'東'でミス上書き
+      const extra2west = p.extraSide ? p.extraSide === '西' : (p.no % 2 === 1);
+      const isEven = !extra2west; // 千鳥クラス用
+      const evenCls = isEven ? 'fp-even' : '';
+
+      // ミス方向トグルボタン
+      const curLabel = extra2west ? '西2東1' : '東2西1';
+      const flipBtn = `<div class="fp-flip"><button class="fp-flip-btn" data-id="${p.id}" title="ツル方向を変更">${curLabel}</button></div>`;
+
+      let rowA, rowB, rowC;
+      if(extra2west){
+        // 奇数型: 西2本+東1本
+        // Row A (上): 西1本目 (vines.西)
+        rowA = `<div class="fp-row">${wDots(p,'西','西')}${emC}${emE}</div>`;
+        // Row B (中): 株番号 + 東ツル (vines.東)
+        rowB = `<div class="fp-row">${emW}${noDiv}${eDots(p,'東','東')}</div>`;
+        // Row C (下): 西2本目 (vines.sub)
+        rowC = `<div class="fp-row">${wDots(p,'sub','西２')}${emC}${emE}</div>`;
+      } else {
+        // 偶数型: 東2本+西1本
+        // Row A (上): 東1本目 (vines.東)
+        rowA = `<div class="fp-row">${emW}${emC}${eDots(p,'東','東')}</div>`;
+        // Row B (中): 西ツル (vines.西) + 株番号
+        rowB = `<div class="fp-row">${wDots(p,'西','西')}${noDiv}${emE}</div>`;
+        // Row C (下): 東2本目 (vines.sub)
+        rowC = `<div class="fp-row">${emW}${emC}${eDots(p,'sub','東２')}</div>`;
+      }
+
+      // 株情報（受粉日・積算温度・残り日数）
+      const info = estimatePlantInfo(p);
+      let infoHtml = '';
+      if(info){
+        const dateDisp = info.date ? info.date.slice(5).replace('-','/') : '';
+        const aColor = info.remaining <= 0 ? 'red' : info.remaining < p.target*0.15 ? 'gold' : 'green';
+        let daysHtml = '';
+        if(info.daysLeft === 0 || info.remaining <= 0){
+          daysHtml = `<div class="fp-info-days overdue">🔴 収穫適期!</div>`;
+        } else if(info.daysLeft != null){
+          const cls = info.daysLeft <= 5 ? 'soon' : 'growing';
+          daysHtml = `<div class="fp-info-days ${cls}">あと約${info.daysLeft}日</div>`;
+        }
+        infoHtml = `<div class="fp-info">
+          ${dateDisp ? `<div class="fp-info-date">🌸 ${dateDisp}受粉</div>` : ''}
+          <div class="fp-info-accum ${aColor}">🌡 ${info.accum} / ${p.target}℃</div>
+          ${daysHtml}
+        </div>`;
+      }
+
+      return `<div class="fp ${evenCls}" data-id="${p.id}">${rowA}${rowB}${rowC}${flipBtn}${infoHtml}</div>`;
+    }).join('');
+
+    html += `<div class="map-group"><h3>${g}</h3><div class="field-lane">${plantHtml}</div></div>`;
+  }
+
+  wrap.innerHTML = html;
+
+  // 株タップ → 詳細
+  wrap.querySelectorAll('.fp[data-id]').forEach(el => {
+    el.addEventListener('click', e => {
+      if(e.target.classList.contains('fp-flip-btn')) return;
+      openDetail(parseInt(el.dataset.id));
+    });
+  });
+  // ツル方向ミストグル
+  wrap.querySelectorAll('.fp-flip-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const p = state.plants.find(x => x.id === parseInt(btn.dataset.id));
+      if(!p) return;
+      const defaultExtra2west = p.no % 2 === 1;
+      const curExtra2west = p.extraSide ? p.extraSide==='西' : defaultExtra2west;
+      // トグル: 現在の逆に設定。デフォルトと同じになる場合はnullに戻す
+      const next = !curExtra2west;
+      p.extraSide = (next === defaultExtra2west) ? null : (next ? '西' : '東');
+      saveData();
+      renderFieldMap();
+    });
+  });
+}
+/* タブナビゲーション */
+document.getElementById('navList').addEventListener('click', () => { bulkMode=false; switchTab('list'); renderAll(); });
+document.getElementById('navMap').addEventListener('click', () => { switchTab('map'); renderAll(); });
+document.getElementById('navManage').addEventListener('click', () => { switchTab('manage'); renderAll(); });
+
+/* ===================== 株詳細モーダル ===================== */
+function openDetail(id){
+  detailPlantId = id; detailVine = '西'; detailFlowerIdx = 0;
+  document.getElementById('detailOverlay').classList.add('show');
+  renderDetail();
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('show'); }
+document.getElementById('closeDetail').addEventListener('click', closeDetail);
+document.getElementById('vineBtnWest').addEventListener('click', () => { detailVine='西'; detailFlowerIdx=0; renderDetail(); });
+document.getElementById('vineBtnEast').addEventListener('click', () => { detailVine='東'; detailFlowerIdx=0; renderDetail(); });
+
+function renderDetail(){
+  const p = state.plants.find(x => x.id === detailPlantId);
+  if(!p) return closeDetail();
+  document.getElementById('detailTitle').textContent = `株 ${plantLabel(p)}${p.group ? ' ('+p.group+')' : ''}`;
+  document.getElementById('targetTempInput').value = p.target;
+  document.getElementById('vineBtnWest').className = detailVine==='西' ? 'active' : '';
+  document.getElementById('vineBtnEast').className = detailVine==='東' ? 'active' : '';
+
+  document.getElementById('flowerTabs').innerHTML = p.vines[detailVine].map((f,i) => {
+    const v = fruitVisual(p,f);
+    return `<div class="flower-tab ${i===detailFlowerIdx?'active':''}" data-i="${i}">
+      ${i+1}番果 <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--${v.color});margin-left:3px;"></span>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('.flower-tab').forEach(t => {
+    t.addEventListener('click', () => { detailFlowerIdx = parseInt(t.dataset.i); renderDetail(); });
+  });
+  const f = p.vines[detailVine][detailFlowerIdx];
+  const v = fruitVisual(p, f);
+  document.getElementById('flowerDetailBody').innerHTML = `
+    <div class="field">
+      <label>着果マーク</label>
+      <select id="markSelect">
+        <option value="none" ${f.mark==='none'?'selected':''}>未着果</option>
+        <option value="x" ${f.mark==='x'?'selected':''}>×（落花・摘果）</option>
+        <option value="o" ${f.mark==='o'?'selected':''}>○（着果）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>受粉日</label>
+      <input type="date" id="pollDateInput" value="${f.date || ''}">
+    </div>
+    <div class="field">
+      <label><input type="checkbox" id="harvestedCheck" ${f.harvested?'checked':''} style="width:auto;margin-right:6px;">収穫済みにする</label>
+    </div>
+    <div class="field">
+      <span class="status-pill" style="background:var(--${v.color});">${STATUS_ICON[v.label]||''} ${v.label}</span>
+      <span style="font-size:13px;color:#666;margin-left:8px;">積算温度: ${v.accum} ℃ / 目標 ${p.target} ℃</span>
+    </div>
+  `;
+  document.getElementById('markSelect').addEventListener('change', e => {
+    f.mark = e.target.value;
+    saveData(); renderDetail(); renderAll();
+  });
+  document.getElementById('pollDateInput').addEventListener('change', e => {
+    f.date = e.target.value;
+    if(f.date && f.mark === 'none') f.mark = 'o';
+    saveData(); renderDetail(); renderAll();
+  });
+  document.getElementById('harvestedCheck').addEventListener('change', e => {
+    f.harvested = e.target.checked;
+    saveData(); renderDetail(); renderAll();
+  });
+}
+document.getElementById('targetTempInput').addEventListener('change', e => {
+  const p = state.plants.find(x => x.id === detailPlantId);
+  if(!p) return;
+  const v = parseFloat(e.target.value);
+  p.target = isNaN(v) ? DEFAULT_TARGET : v;
+  saveData(); renderDetail(); renderAll();
+});
+document.getElementById('btnDeletePlant').addEventListener('click', () => {
+  if(!confirm('この株を削除しますか？')) return;
+  state.plants = state.plants.filter(x => x.id !== detailPlantId);
+  saveData(); closeDetail(); renderAll();
+});
+
+/* ===================== 株追加 ===================== */
+document.getElementById('btnAddPlant').addEventListener('click', () => {
+  const maxNo = state.plants.reduce((m,p) => Math.max(m,p.no), 0);
+  document.getElementById('newNo').value = maxNo + 1;
+  document.getElementById('newGroup').value = '';
+  document.getElementById('addOverlay').classList.add('show');
+});
+document.getElementById('closeAdd').addEventListener('click', () => {
+  document.getElementById('addOverlay').classList.remove('show');
+});
+document.getElementById('btnConfirmAdd').addEventListener('click', () => {
+  const no = parseInt(document.getElementById('newNo').value) || 1;
+  const group = document.getElementById('newGroup').value.trim();
+  const maxId = state.plants.reduce((m,p) => Math.max(m,p.id), 0);
+  state.plants.push(newPlant(maxId+1, no, group));
+  saveData();
+  document.getElementById('addOverlay').classList.remove('show');
+  currentBlock = Math.floor((state.plants.length-1)/10);
+  renderAll();
+});
+
+/* ===================== 一括編集 ===================== */
+function bulkFruitCell(p, vine, idx){
+  const f = p.vines[vine][idx];
+  return `<td>
+    <select class="bulk-mark" data-id="${p.id}" data-vine="${vine}" data-idx="${idx}">
+      <option value="none" ${f.mark==='none'?'selected':''}>未</option>
+      <option value="x" ${f.mark==='x'?'selected':''}>×</option>
+      <option value="o" ${f.mark==='o'?'selected':''}>○</option>
+    </select><br>
+    <input type="date" class="bulk-date" data-id="${p.id}" data-vine="${vine}" data-idx="${idx}" value="${f.date||''}">
+  </td>`;
+}
+function renderBulkEdit(){
+  const bs = blocks();
+  const list = bs[currentBlock] || [];
+  const wrap = document.getElementById('bulkWrap');
+  if(list.length === 0){ wrap.innerHTML = '<div class="empty">株がありません</div>'; return; }
+  let html = '<table class="bulk"><thead><tr><th>株</th><th>班</th><th>目標℃</th>';
+  for(let i=6;i>=1;i--) html += `<th>西${i}</th>`;
+  for(let i=1;i<=6;i++) html += `<th>東${i}</th>`;
+  html += '</tr></thead><tbody>';
+  for(const p of list){
+    html += `<tr><td class="plantname-cell">${plantLabel(p)}</td>`;
+    html += `<td><input type="text" data-id="${p.id}" class="bulk-group" value="${p.group||''}"></td>`;
+    html += `<td><input type="number" data-id="${p.id}" class="bulk-target" value="${p.target}" style="width:46px;"></td>`;
+    for(let i=5;i>=0;i--) html += bulkFruitCell(p, '西', i);
+    for(let i=0;i<6;i++) html += bulkFruitCell(p, '東', i);
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('.bulk-target').forEach(el => el.addEventListener('change', e => {
+    const p = state.plants.find(x => x.id === parseInt(e.target.dataset.id));
+    const v = parseFloat(e.target.value);
+    p.target = isNaN(v) ? DEFAULT_TARGET : v;
+    saveData(); renderSummary(); renderBlockNav();
+  }));
+  wrap.querySelectorAll('.bulk-group').forEach(el => el.addEventListener('change', e => {
+    const p = state.plants.find(x => x.id === parseInt(e.target.dataset.id));
+    p.group = e.target.value.trim();
+    saveData();
+  }));
+  wrap.querySelectorAll('.bulk-mark').forEach(el => el.addEventListener('change', e => {
+    const p = state.plants.find(x => x.id === parseInt(e.target.dataset.id));
+    const f = p.vines[e.target.dataset.vine][parseInt(e.target.dataset.idx)];
+    f.mark = e.target.value;
+    saveData(); renderSummary(); renderBlockNav();
+  }));
+  wrap.querySelectorAll('.bulk-date').forEach(el => el.addEventListener('change', e => {
+    const p = state.plants.find(x => x.id === parseInt(e.target.dataset.id));
+    const f = p.vines[e.target.dataset.vine][parseInt(e.target.dataset.idx)];
+    f.date = e.target.value;
+    if(f.date && f.mark === 'none') f.mark = 'o';
+    saveData(); renderBulkEdit(); renderSummary(); renderBlockNav();
+  }));
+}
+
+/* ===================== データ取込（着果調査シートの貼り付け） ===================== */
+// 画像(2026/6/15 調査票)から読み取った1班データ
+const IMAGE_DATA_2026_0615 = [
+  '1班\t\t\t\t×\t×\t×\t1\t×\t×\t×\t\t\t',
+  '\t\t\t○\t×\t×\t×\t\t\t\t\t\t\t',
+  '1班\t\t\t\t\t×\t×\t2\t×\t\t×\t\t\t',
+  '\t\t\t\t×\t×\t×\t\t2026/5/22\t×\t○\t\t\t',
+  '1班\t\t\t\t2026/5/31\t×\t×\t3\t×\t×\t×\t\t\t',
+  '\t\t\t\t2026/5/31\t×\t×\t\t×\t×\t×\t\t\t',
+  '1班\t\t\t2026/5/31\t2026/5/26\t×\t×\t4\t×\t2026/5/31\t\t\t\t',
+  '\t\t\t\t\t\t\t\t×\t\t2026/5/31\t\t\t',
+  '1班\t\t\t\t×\t×\t×\t5\t\t×\t2026/5/31\t\t\t',
+  '\t\t\t\t×\t2026/5/31\t2026/5/26\t\t\t\t\t\t\t',
+  '1班\t\t\t\t×\t×\t×\t6\t×\t×\t2026/5/15\t2026/5/31\t2026/5/31\t',
+  '\t\t\t\t×\t×\t×\t\t×\t×\t2026/5/25\t\t\t',
+  '1班\t\t\t\t○\t×\t×\t7\t×\t2026/5/31\t2026/5/31\t\t\t',
+  '\t\t\t\t○\t×\t×\t\t\t\t\t\t\t',
+  '1班\t\t\t\t○\t×\t×\t8\t×\t2026/5/31\t○\t\t\t',
+  '\t\t\t\t\t\t\t\t×\t2026/5/15\t×\t\t\t',
+  '1班\t\t\t2026/5/25\t×\t×\t×\t9\t×\t2026/5/20\t×\t\t\t',
+  '\t\t\t\t2026/5/21\t×\t\t\t\t\t\t\t\t',
+  '1班\t\t\t2026/5/31\t2026/5/25\t×\t×\t10\t×\t×\t2026/5/31\t\t\t',
+  '\t\t\t\t\t×\t\t\t×\t2026/5/31\t2026/5/31\t\t\t',
+].join('\n');
+
+document.getElementById('btnImport').addEventListener('click', () => {
+  document.getElementById('importText').value = '';
+  document.getElementById('importResult').textContent = '';
+  document.getElementById('importOverlay').classList.add('show');
+});
+document.getElementById('closeImport').addEventListener('click', () => {
+  document.getElementById('importOverlay').classList.remove('show');
+});
+function parseCellValue(raw){
+  const s = (raw||'').trim();
+  if(s === '') return { mark:'none', date:'' };
+  if(s === '×' || s.toLowerCase() === 'x') return { mark:'x', date:'' };
+  if(s === '○' || s.toLowerCase() === 'o') return { mark:'o', date:'' };
+  const m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(m){
+    const iso = `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    return { mark:'o', date: iso };
+  }
+  return { mark:'none', date:'' };
+}
+function parseImportText(text){
+  const rawLines = text.split('\n').map(l => l.trimEnd());
+  // 空行除去せずに全行取得（原票フォーマット判定に必要）
+  const allCols = rawLines.map(l => {
+    const c = l.includes('\t') ? l.split('\t') : l.split(',');
+    return c.map(s => s.trim());
+  });
+
+  // フォーマット判定: 原票形式 = col[7]が純粋な数値でcol[0]が純粋な数値でない
+  // 原票形式: [班, 西6, 西5, 西4, 西3, 西2, 西1, No., 東1, 東2, 東3, 東4, 東5, 東6]
+  function isOriginalFormat(cols){
+    return cols.length >= 8 && !/^\d+$/.test(cols[0]) && /^\d+$/.test(cols[7]);
+  }
+
+  // 2行1株のマージ: 日付 > ○ > × > 空欄 の優先度で採用
+  function cellScore(v){
+    v = (v||'').trim();
+    if(!v) return 0;
+    if(v==='×'||v.toLowerCase()==='x') return 1;
+    if(v==='○'||v.toLowerCase()==='o') return 2;
+    if(/^\d{4}/.test(v)) return 3; // 受粉日付
+    return 0;
+  }
+  function mergeCols(rowA, rowB, start, len){
+    const result = [];
+    for(let i = 0; i < len; i++){
+      const a = (rowA[start+i] || '').trim();
+      const b = (rowB ? (rowB[start+i] || '') : '').trim();
+      result.push(cellScore(a) >= cellScore(b) ? (a || b) : b);
+    }
+    return result;
+  }
+
+  const plants = [];
+  let skipped = 0;
+  let nextId = 1;
+
+  // 先頭の有効行でフォーマット判定
+  // 原票形式はtrimEnd()で末尾タブが消えるため最小8列で検出（班+西6〜西1+No.）
+  const firstValid = allCols.find(c => c.length >= 8);
+  const useOrigFmt = firstValid && isOriginalFormat(firstValid);
+
+  if(useOrigFmt){
+    // 原票フォーマット: No.がcol[7]、1株2行ペア
+    // ヘッダー行（「No.」という文字を含む行）をスキップ
+    const dataLines = allCols.filter(c => {
+      const joined = c.join('');
+      if(/^[\s　]*$/.test(joined)) return false; // 完全空行
+      if(c.some(s => /^No[．.]?$/.test(s))) return false; // ヘッダー行
+      return true;
+    });
+
+    let i = 0;
+    while(i < dataLines.length){
+      const rowA = dataLines[i];
+      const noA = parseInt(rowA[7] || '');
+      if(isNaN(noA)){ i++; skipped++; continue; }
+
+      // 次行がRow B（col[7]が空）かチェック
+      const rowB = (i+1 < dataLines.length && isNaN(parseInt((dataLines[i+1][7]||'')))) ? dataLines[i+1] : null;
+
+      const group = (rowA[0] || '').trim();
+      // 西cols: col[1..6] = 西6,西5,西4,西3,西2,西1 → reverse → 西1..西6
+      const westRaw = mergeCols(rowA, rowB, 1, 6).reverse(); // 西1番果がindex0
+      // 東cols: col[8..13] = 東1,東2,東3,東4,東5,東6
+      const eastRaw = mergeCols(rowA, rowB, 8, 6);
+
+      const plant = newPlant(nextId++, noA, group);
+      plant.vines.西 = westRaw.map(v => { const c=parseCellValue(v); return {mark:c.mark,date:c.date,harvested:false}; });
+      plant.vines.東 = eastRaw.map(v => { const c=parseCellValue(v); return {mark:c.mark,date:c.date,harvested:false}; });
+      plants.push(plant);
+
+      i += rowB ? 2 : 1;
+    }
+  } else {
+    // テンプレートフォーマット: No.がcol[0]
+    for(const trimmed of allCols){
+      if(trimmed.length < 13) continue;
+      const no = parseInt(trimmed[0]);
+      if(isNaN(no)){ skipped++; continue; }
+      let rest = trimmed.slice(1);
+      let group = '';
+      if(rest.length >= 13){
+        group = rest[0];
+        rest = rest.slice(1);
+      }
+      if(rest.length < 12){ skipped++; continue; }
+      const westRaw = rest.slice(0,6);
+      const eastRaw = rest.slice(6,12);
+      const westAsc = [...westRaw].reverse().map(parseCellValue);
+      const eastAsc = eastRaw.map(parseCellValue);
+      const plant = newPlant(nextId++, no, group);
+      plant.vines.西 = westAsc.map(c => ({ mark:c.mark, date:c.date, harvested:false }));
+      plant.vines.東 = eastAsc.map(c => ({ mark:c.mark, date:c.date, harvested:false }));
+      plants.push(plant);
+    }
+  }
+  return { plants, skipped };
+}
+document.getElementById('btnLoadImageData').addEventListener('click', () => {
+  document.getElementById('importText').value = IMAGE_DATA_2026_0615;
+  const { plants, skipped } = parseImportText(IMAGE_DATA_2026_0615);
+  document.getElementById('importResult').textContent =
+    `${plants.length}株を読み取りました（画像 2026/6/15 調査票 1班 No.1〜10）`;
+});
+document.getElementById('importText').addEventListener('input', e => {
+  const { plants, skipped } = parseImportText(e.target.value);
+  document.getElementById('importResult').textContent =
+    plants.length > 0 ? `${plants.length}株を読み取りました${skipped>0 ? '（'+skipped+'行は形式が合わず無視されました）' : ''}` : '';
+});
+document.getElementById('btnDoImport').addEventListener('click', () => {
+  const { plants, skipped } = parseImportText(document.getElementById('importText').value);
+  if(plants.length === 0){ alert('読み取れる行がありませんでした。形式を確認してください。'); return; }
+  if(!confirm(`${plants.length}株のデータを取り込み、既存のデータを置き換えます。よろしいですか？${skipped>0 ? '\n('+skipped+'行は無視されます)' : ''}`)) return;
+  state.plants = plants;
+  saveData();
+  currentBlock = 0;
+  document.getElementById('importOverlay').classList.remove('show');
+  renderAll();
+});
+
+/* ===================== リセット ===================== */
+document.getElementById('btnReset').addEventListener('click', () => {
+  if(!confirm('全データを削除して初期化しますか？この操作は取り消せません。')) return;
+  state = { plants: [], tempLog: {} };
+  saveData();
+  currentBlock = 0;
+  renderAll();
+});
+
+/* ===================== 初期化 ===================== */
+renderAll();
+fetchTemperature();
+
+/* ===================== サービスワーカー登録 ===================== */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
