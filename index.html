@@ -422,134 +422,163 @@
   .empty-cta{display:inline-block;margin-top:12px;padding:10px 24px;border-radius:20px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;border:none;}
 
   /* ===== 圃場マップ ===== */
-  .map-wrap{padding:10px 12px;}
-  .map-legend{
-    display:flex;gap:8px;flex-wrap:wrap;
-    font-size:11px;font-weight:600;color:var(--sub);
-    margin-bottom:12px;align-items:center;
-    background:var(--card);border-radius:10px;padding:8px 12px;
-    box-shadow:0 1px 3px rgba(0,0,0,.06);
+  .map-wrap{padding:10px 12px 80px;}
+  .map-compass{
+    display:flex;align-items:center;justify-content:center;gap:0;
+    font-size:12px;font-weight:800;color:var(--sub);
+    margin-bottom:10px;letter-spacing:.5px;
   }
-  .map-legend .sw{
-    display:inline-block;width:10px;height:10px;
-    border-radius:50%;margin-right:4px;vertical-align:middle;
+  .map-compass .cmp-w{
+    flex:1;text-align:right;padding-right:10px;
+    color:#7a6a50;font-size:11px;
   }
-  .map-legend span{display:flex;align-items:center;}
-  .map-group{margin-bottom:24px;}
-  .map-group h3{
-    font-size:13px;font-weight:800;color:var(--accent);
-    margin:0 0 10px;padding:4px 0 6px;
-    border-bottom:2px solid var(--border);
+  .map-compass .cmp-e{
+    flex:1;text-align:left;padding-left:10px;
+    color:#7a6a50;font-size:11px;
+  }
+  .map-compass .cmp-center{
+    display:flex;gap:6px;align-items:center;font-size:10px;flex-wrap:wrap;justify-content:center;
+  }
+  .map-legend-dot{
+    display:inline-flex;align-items:center;gap:4px;
+    font-size:10px;font-weight:600;color:var(--sub);
+  }
+  .map-legend-dot span{
+    width:11px;height:11px;border-radius:50%;display:inline-block;
+    border:2px solid rgba(255,255,255,.6);
+  }
+  .map-group{margin-bottom:20px;}
+  .map-group-title{
+    font-size:14px;font-weight:800;color:#4a6820;
+    margin:0 0 10px;padding:6px 12px;
+    background:rgba(255,255,255,.6);
+    border-radius:10px;
     display:flex;align-items:center;gap:6px;
+    border-left:4px solid var(--accent);
   }
-  .map-group h3::before{content:"🌾";font-size:14px;}
 
   /* === 3本仕立て 千鳥畝ビュー === */
   .field-lane{
-    display:flex;flex-direction:column;align-items:flex-start;gap:4px;
-    background:linear-gradient(160deg,#ede8d8,#e2dcc8);
-    border-radius:14px;padding:20px 20px 32px;overflow-y:auto;
-    max-height:68vh;
-    box-shadow:inset 0 2px 8px rgba(0,0,0,.06);
+    display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+    background:
+      repeating-linear-gradient(to bottom,transparent,transparent 72px,rgba(120,100,60,.07) 72px,rgba(120,100,60,.07) 73px),
+      linear-gradient(160deg,#e8eedc,#dbe5c5);
+    border-radius:16px;padding:16px 16px 24px;overflow-y:auto;
+    max-height:70vh;
+    box-shadow:inset 0 2px 10px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.06);
+    border:1.5px solid #c8d4a4;
   }
-  /* 1株 */
+
+  /* 1株カード */
   .fp{
-    display:flex;flex-direction:column;gap:2px;
+    display:flex;flex-direction:column;gap:0;
     cursor:pointer;flex:0 0 auto;
-    transition:opacity .12s;border-radius:6px;
-    padding:2px 4px;
+    background:rgba(255,255,255,.82);
+    border-radius:14px;
+    border:1.5px solid rgba(255,255,255,.95);
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    padding:8px 10px 6px;
+    transition:transform .12s,box-shadow .12s;
+    backdrop-filter:blur(2px);
   }
-  .fp:hover{opacity:.85;}
-  .fp:active{opacity:.7;}
-  /* 千鳥: 偶数株を右にずらす */
-  .fp.fp-even{margin-left:32px;}
+  .fp:active{transform:scale(.97);box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .fp.fp-even{margin-left:40px;}
 
   /* 各ツル行 */
-  .fp-row{display:flex;align-items:center;min-height:16px;gap:3px;}
+  .fp-row{display:flex;align-items:center;min-height:20px;gap:4px;margin-bottom:2px;}
 
-  /* 西側ドットゾーン (右寄せ: 6番果が左端) */
+  /* 西側ドットゾーン (右寄せ) */
   .fp-w{
-    display:flex;gap:3px;align-items:center;
-    width:90px;justify-content:flex-end;flex:0 0 auto;
+    display:flex;gap:4px;align-items:center;
+    width:96px;justify-content:flex-end;flex:0 0 auto;
   }
-  /* 東側ドットゾーン (左寄せ: 1番果が左端) */
+  /* 東側ドットゾーン (左寄せ) */
   .fp-e{
-    display:flex;gap:3px;align-items:center;
-    width:90px;justify-content:flex-start;flex:0 0 auto;
+    display:flex;gap:4px;align-items:center;
+    width:96px;justify-content:flex-start;flex:0 0 auto;
+  }
+  /* ツルラベル */
+  .fp-vlabel{
+    font-size:8px;font-weight:800;color:rgba(80,100,50,.8);
+    writing-mode:horizontal-tb;
+    background:rgba(180,210,140,.5);border-radius:3px;
+    padding:1px 3px;flex:0 0 auto;
+    white-space:nowrap;
   }
   /* 中心ゾーン */
-  .fp-ctr{width:30px;height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
+  .fp-ctr{width:38px;height:38px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
 
   /* 株番号マーカー */
   .fp-no{
-    width:28px;height:28px;border-radius:50%;
-    background:var(--accent);color:#fff;
+    width:36px;height:36px;border-radius:50%;
+    background:linear-gradient(135deg,#4a8830,#2d6018);
+    color:#fff;
     display:flex;align-items:center;justify-content:center;
-    font-size:10px;font-weight:800;
-    box-shadow:0 2px 6px rgba(0,0,0,.25);
-    border:2.5px solid rgba(255,255,255,.6);
-    letter-spacing:-.3px;
+    font-size:12px;font-weight:900;
+    box-shadow:0 3px 8px rgba(0,0,0,.28);
+    border:3px solid rgba(255,255,255,.75);
+    letter-spacing:-.5px;
   }
-  .fp-no.col-red{background:var(--red);}
-  .fp-no.col-gold{background:var(--gold);}
+  .fp-no.col-red{background:linear-gradient(135deg,#e04040,#b01010);}
+  .fp-no.col-gold{background:linear-gradient(135deg,#d4960c,#9a6800);}
   .fp-no.pulse{animation:pulseRed 1.8s infinite;}
 
   /* ツル方向ミスボタン */
-  .fp-flip{display:flex;justify-content:center;margin-top:2px;}
+  .fp-flip{display:flex;justify-content:center;margin-top:3px;}
   .fp-flip-btn{
-    font-size:8px;font-weight:600;
-    background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);
-    border-radius:4px;padding:1px 6px;cursor:pointer;
-    color:var(--sub);line-height:1.5;
+    font-size:9px;font-weight:700;
+    background:rgba(240,245,230,.9);border:1px solid rgba(100,120,60,.25);
+    border-radius:6px;padding:2px 8px;cursor:pointer;
+    color:#5a7030;line-height:1.5;
     transition:background .1s;
   }
-  .fp-flip-btn:hover{background:#fff;}
+  .fp-flip-btn:active{background:#e0e8c8;}
 
   /* 着果ドット */
   .fp-dot{
-    width:13px;height:13px;border-radius:50%;flex:0 0 auto;
-    box-shadow:0 1px 2px rgba(0,0,0,.2);
+    width:16px;height:16px;border-radius:50%;flex:0 0 auto;
+    box-shadow:0 1px 3px rgba(0,0,0,.22);
+    border:2px solid rgba(255,255,255,.65);
+    transition:transform .1s;
   }
+  .fp-dot:hover{transform:scale(1.2);}
   .fp-dot.red{background:var(--red);}
   .fp-dot.gold{background:var(--gold);}
   .fp-dot.green{background:var(--green);}
   .fp-dot.blue{background:var(--blue);}
-  .fp-dot.gray{background:#bbbeb8;}
+  .fp-dot.gray{background:#c0c4b8;}
 
-  /* 株情報ピル（圃場マップ内） */
+  /* 株情報エリア */
   .fp-info{
-    display:flex;flex-direction:column;align-items:center;gap:2px;
-    margin-top:4px;
+    display:flex;align-items:center;justify-content:center;
+    gap:5px;margin-top:6px;flex-wrap:wrap;
+    border-top:1px solid rgba(0,0,0,.06);padding-top:5px;
   }
   .fp-info-date{
-    font-size:9px;font-weight:700;color:#5a4e38;
-    background:rgba(255,255,255,.75);border-radius:5px;
-    padding:1px 6px;letter-spacing:.2px;white-space:nowrap;
+    font-size:10px;font-weight:700;color:#6a5a38;
+    background:rgba(255,220,100,.35);border-radius:6px;
+    padding:2px 7px;white-space:nowrap;
   }
-  .fp-info-accum{
-    font-size:9px;font-weight:800;
-    padding:1px 6px;border-radius:5px;
-    white-space:nowrap;
+  .fp-accum-wrap{
+    display:flex;align-items:center;gap:4px;flex:1;min-width:60px;
   }
-  .fp-info-accum.green{background:#d4f0d6;color:#1b6320;}
-  .fp-info-accum.gold{background:#fff0b3;color:#7a5800;}
-  .fp-info-accum.red{background:#ffd6d6;color:#b01010;}
-  .fp-info-accum.gray{background:rgba(255,255,255,.6);color:#888;}
+  .fp-accum-bar{
+    height:5px;border-radius:3px;background:rgba(0,0,0,.1);
+    flex:1;overflow:hidden;
+  }
+  .fp-accum-fill{height:100%;border-radius:3px;transition:width .3s;}
+  .fp-accum-fill.green{background:var(--green);}
+  .fp-accum-fill.gold{background:var(--gold);}
+  .fp-accum-fill.red{background:var(--red);}
+  .fp-accum-text{font-size:9px;font-weight:800;color:var(--sub);white-space:nowrap;}
   .fp-info-days{
-    font-size:10px;font-weight:900;letter-spacing:-.3px;
-    padding:2px 8px;border-radius:10px;white-space:nowrap;
+    font-size:10px;font-weight:900;
+    padding:2px 9px;border-radius:10px;white-space:nowrap;
   }
   .fp-info-days.overdue{background:var(--red);color:#fff;animation:pulseRed 1.8s infinite;}
   .fp-info-days.soon{background:var(--gold);color:#fff;}
-  .fp-info-days.growing{background:#e8f5e9;color:#2a7a32;border:1px solid #b2dfb4;}
+  .fp-info-days.growing{background:#e0f0e0;color:#2a7a32;border:1px solid #b8dcb8;}
   .fp-info-days.none{display:none;}
-
-  /* 圃場マップ背景：土っぽく */
-  .field-lane{
-    background:linear-gradient(160deg,#ede8d4,#e0d9c0) !important;
-    border:1.5px solid #c8be9e;
-  }
-  .map-group h3{color:#5a7a28 !important;}
 
   /* 全体的な丸みアップ */
   .plant-card{border-radius:18px !important;}
@@ -684,6 +713,7 @@ const DEFAULT_TARGET = 800;
 const LAT = 34.930, LON = 137.165;
 const STORE_KEY = 'suikaAppData_v2';
 const DB_URL_KEY = 'suikaFirebaseUrl';
+const DEFAULT_DB_URL = 'https://suika-6313a-default-rtdb.asia-southeast1.firebasedatabase.app';
 const VINES = ['西','東'];
 const COLOR_PRIORITY = { red:4, gold:3, green:2, blue:1, gray:0 };
 const STATUS_ICON = { '収穫適期':'🔴', 'まもなく':'🟡', '生育中':'🌱', '着果(日付未定)':'🌼', '収穫済み':'🍉', '落花・摘果':'💤', '未着果':'🌑' };
@@ -696,7 +726,7 @@ let currentTab = 'list';
 let detailPlantId = null;
 let detailVine = '西';
 let detailFlowerIdx = 0;
-let dbUrl = localStorage.getItem(DB_URL_KEY) || '';
+let dbUrl = localStorage.getItem(DB_URL_KEY) || DEFAULT_DB_URL;
 let syncStatus = 'offline'; // 'offline' | 'syncing' | 'ok' | 'error'
 let lastSyncTime = null;
 let syncTimer = null;
@@ -1269,32 +1299,36 @@ function renderFieldMap(){
   // ドット生成
   function dot(plant, fruit, vineName, fruitIdx){
     const v = fruitVisual(plant, fruit);
-    const tip = `${vineName}${fruitIdx+1}番果: ${v.label}${fruit.date?' ('+fruit.date+')':''}`;
+    const dateStr = fruit.date ? fruit.date.slice(5).replace('-','/') : '';
+    const tip = `${vineName} ${fruitIdx+1}番果\n${v.label}${dateStr?' ('+dateStr+')':''}`;
     return `<div class="fp-dot ${v.color}" title="${tip}"></div>`;
   }
-  // 西側ドット列: 6番果(左)→1番果(右) で右寄せ
-  function wDots(plant, vineKey, label){
+  // 西側ドット列（右寄せ）
+  function wDots(plant, vineKey){
     const fruits = plant.vines[vineKey] || [];
-    return `<div class="fp-w">${[...fruits].reverse().map((f,i) => dot(plant, f, label, 5-i)).join('')}</div>`;
+    return `<div class="fp-w">${[...fruits].reverse().map((f,i) => dot(plant, f, vineKey, 5-i)).join('')}</div>`;
   }
-  // 東側ドット列: 1番果(左)→6番果(右)
-  function eDots(plant, vineKey, label){
+  // 東側ドット列（左寄せ）
+  function eDots(plant, vineKey){
     const fruits = plant.vines[vineKey] || [];
-    return `<div class="fp-e">${fruits.map((f,i) => dot(plant, f, label, i)).join('')}</div>`;
+    return `<div class="fp-e">${fruits.map((f,i) => dot(plant, f, vineKey, i)).join('')}</div>`;
   }
-  // 空ゾーン
   const emW = `<div class="fp-w"></div>`;
   const emE = `<div class="fp-e"></div>`;
   const emC = `<div class="fp-ctr"></div>`;
 
+  // コンパス＋凡例
   let html = `
-    <div class="map-legend">
-      <span><span class="sw" style="background:var(--red);"></span>収穫適期</span>
-      <span><span class="sw" style="background:var(--gold);"></span>まもなく</span>
-      <span><span class="sw" style="background:var(--green);"></span>生育中</span>
-      <span><span class="sw" style="background:var(--blue);"></span>着果(日付未定)</span>
-      <span><span class="sw" style="background:#ccc;"></span>未着果・落花等</span>
-      <span style="margin-left:8px;font-size:10px;color:#aaa;">西← [株No.] →東 / 奇数株=西2本+東1本 / 偶数株=東2本+西1本</span>
+    <div class="map-compass">
+      <div class="cmp-w">← 西</div>
+      <div class="cmp-center">
+        <span class="map-legend-dot"><span style="background:var(--red)"></span>収穫適期</span>
+        <span class="map-legend-dot"><span style="background:var(--gold)"></span>まもなく</span>
+        <span class="map-legend-dot"><span style="background:var(--green)"></span>生育中</span>
+        <span class="map-legend-dot"><span style="background:var(--blue)"></span>着果</span>
+        <span class="map-legend-dot"><span style="background:#c0c4b8"></span>未着果</span>
+      </div>
+      <div class="cmp-e">東 →</div>
     </div>
   `;
 
@@ -1305,50 +1339,43 @@ function renderFieldMap(){
       const pulseCls = overall.color==='red' ? 'pulse' : '';
       const noDiv = `<div class="fp-ctr"><div class="fp-no ${noCol} ${pulseCls}">${p.no}</div></div>`;
 
-      // extraSide: nullなら株番号の奇偶で決定, '西'or'東'でミス上書き
       const extra2west = p.extraSide ? p.extraSide === '西' : (p.no % 2 === 1);
-      const isEven = !extra2west; // 千鳥クラス用
-      const evenCls = isEven ? 'fp-even' : '';
-
-      // ミス方向トグルボタン
-      const curLabel = extra2west ? '西2東1' : '東2西1';
-      const flipBtn = `<div class="fp-flip"><button class="fp-flip-btn" data-id="${p.id}" title="ツル方向を変更">${curLabel}</button></div>`;
+      const evenCls = !extra2west ? 'fp-even' : '';
+      const curLabel = extra2west ? '西2・東1' : '東2・西1';
+      const flipBtn = `<div class="fp-flip"><button class="fp-flip-btn" data-id="${p.id}">${curLabel} ⇄</button></div>`;
 
       let rowA, rowB, rowC;
       if(extra2west){
-        // 奇数型: 西2本+東1本
-        // Row A (上): 西1本目 (vines.西)
-        rowA = `<div class="fp-row">${wDots(p,'西','西')}${emC}${emE}</div>`;
-        // Row B (中): 株番号 + 東ツル (vines.東)
-        rowB = `<div class="fp-row">${emW}${noDiv}${eDots(p,'東','東')}</div>`;
-        // Row C (下): 西2本目 (vines.sub)
-        rowC = `<div class="fp-row">${wDots(p,'sub','西２')}${emC}${emE}</div>`;
+        rowA = `<div class="fp-row"><span class="fp-vlabel">西①</span>${wDots(p,'西')}${emC}${emE}</div>`;
+        rowB = `<div class="fp-row">${emW}${noDiv}${eDots(p,'東')}<span class="fp-vlabel">東</span></div>`;
+        rowC = `<div class="fp-row"><span class="fp-vlabel">西②</span>${wDots(p,'sub')}${emC}${emE}</div>`;
       } else {
-        // 偶数型: 東2本+西1本
-        // Row A (上): 東1本目 (vines.東)
-        rowA = `<div class="fp-row">${emW}${emC}${eDots(p,'東','東')}</div>`;
-        // Row B (中): 西ツル (vines.西) + 株番号
-        rowB = `<div class="fp-row">${wDots(p,'西','西')}${noDiv}${emE}</div>`;
-        // Row C (下): 東2本目 (vines.sub)
-        rowC = `<div class="fp-row">${emW}${emC}${eDots(p,'sub','東２')}</div>`;
+        rowA = `<div class="fp-row">${emW}${emC}${eDots(p,'東')}<span class="fp-vlabel">東①</span></div>`;
+        rowB = `<div class="fp-row"><span class="fp-vlabel">西</span>${wDots(p,'西')}${noDiv}${emE}</div>`;
+        rowC = `<div class="fp-row">${emW}${emC}${eDots(p,'sub')}<span class="fp-vlabel">東②</span></div>`;
       }
 
-      // 株情報（受粉日・積算温度・残り日数）
+      // 株情報（受粉日・積算温度プログレスバー・残り日数）
       const info = estimatePlantInfo(p);
       let infoHtml = '';
       if(info){
         const dateDisp = info.date ? info.date.slice(5).replace('-','/') : '';
-        const aColor = info.remaining <= 0 ? 'red' : info.remaining < p.target*0.15 ? 'gold' : 'green';
+        const ratio = Math.min(1, info.accum / p.target);
+        const pct = Math.round(ratio * 100);
+        const barColor = info.remaining <= 0 ? 'red' : info.remaining < p.target*0.15 ? 'gold' : 'green';
         let daysHtml = '';
-        if(info.daysLeft === 0 || info.remaining <= 0){
+        if(info.remaining <= 0){
           daysHtml = `<div class="fp-info-days overdue">🔴 収穫適期!</div>`;
         } else if(info.daysLeft != null){
           const cls = info.daysLeft <= 5 ? 'soon' : 'growing';
           daysHtml = `<div class="fp-info-days ${cls}">あと約${info.daysLeft}日</div>`;
         }
         infoHtml = `<div class="fp-info">
-          ${dateDisp ? `<div class="fp-info-date">🌸 ${dateDisp}受粉</div>` : ''}
-          <div class="fp-info-accum ${aColor}">🌡 ${info.accum} / ${p.target}℃</div>
+          ${dateDisp ? `<div class="fp-info-date">🌸${dateDisp}</div>` : ''}
+          <div class="fp-accum-wrap">
+            <div class="fp-accum-bar"><div class="fp-accum-fill ${barColor}" style="width:${pct}%"></div></div>
+            <div class="fp-accum-text">${info.accum}℃</div>
+          </div>
           ${daysHtml}
         </div>`;
       }
@@ -1356,7 +1383,7 @@ function renderFieldMap(){
       return `<div class="fp ${evenCls}" data-id="${p.id}">${rowA}${rowB}${rowC}${flipBtn}${infoHtml}</div>`;
     }).join('');
 
-    html += `<div class="map-group"><h3>${g}</h3><div class="field-lane">${plantHtml}</div></div>`;
+    html += `<div class="map-group"><div class="map-group-title">🌾 ${g}</div><div class="field-lane">${plantHtml}</div></div>`;
   }
 
   wrap.innerHTML = html;
