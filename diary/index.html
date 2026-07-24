@@ -417,10 +417,45 @@ function shiftDate(d, delta) {
 }
 
 // ── Storage ──
+// Firebase stores JS arrays as {0:{...},1:{...}} — convert back to arrays
+function toArray(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return Object.values(val);
+}
+
+function sanitize(data) {
+  if (!data) return initState();
+  return {
+    fields:    toArray(data.fields),
+    entries:   (data.entries && typeof data.entries === 'object' && !Array.isArray(data.entries)) ? data.entries : {},
+    tags:      toArray(data.tags).length ? toArray(data.tags) : [...DEFAULT_TAGS],
+    pestNames: toArray(data.pestNames),
+  };
+}
+
+// Merge remote and local: per-entry, take the one with newer updatedAt
+function mergeStates(local, remote) {
+  const merged = sanitize(local);
+  const rem    = sanitize(remote);
+  // fields/tags/pestNames: remote wins (last writer wins for metadata)
+  if (rem.fields.length)    merged.fields    = rem.fields;
+  if (rem.tags.length)      merged.tags      = rem.tags;
+  if (rem.pestNames.length) merged.pestNames = rem.pestNames;
+  // entries: per-date, take newer updatedAt
+  Object.entries(rem.entries || {}).forEach(([d, re]) => {
+    const le = merged.entries[d];
+    if (!le || (re.updatedAt || 0) > (le.updatedAt || 0)) {
+      merged.entries[d] = re;
+    }
+  });
+  return merged;
+}
+
 function loadLocal() {
   try {
     const d = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (d) return { ...initState(), ...d };
+    if (d) return sanitize(d);
   } catch(e) {}
   return initState();
 }
@@ -433,12 +468,13 @@ async function loadRemote() {
     if (!res.ok) { setSyncStatus('error'); return null; }
     const data = await res.json();
     setSyncStatus('ok');
-    return data || initState();
+    return data;
   } catch(e) { setSyncStatus('error'); return null; }
 }
 
 async function saveRemote() {
   try {
+    setSyncStatus('syncing');
     const res = await fetch(DB_BASE + DB_PATH, {
       method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(state)
     });
@@ -456,16 +492,20 @@ function setSyncStatus(s) {
   if (lbl) lbl.textContent = {ok:'同期済',syncing:'同期中',error:'エラー',offline:'オフライン'}[s] || '';
 }
 
+async function pullAndMerge() {
+  const remote = await loadRemote();
+  if (remote) {
+    state = mergeStates(state, remote);
+    saveLocal();
+    renderAll();
+  }
+}
+
 function startSync() {
   clearInterval(syncTimer);
-  syncTimer = setInterval(async () => {
-    const r = await loadRemote();
-    if (r && r.entries) { state = {...initState(),...r}; saveLocal(); renderAll(); }
-  }, 30000);
+  syncTimer = setInterval(pullAndMerge, 30000);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      loadRemote().then(r => { if (r && r.entries) { state={...initState(),...r}; saveLocal(); renderAll(); } });
-    }
+    if (document.visibilityState === 'visible') pullAndMerge();
   });
 }
 
@@ -1170,9 +1210,10 @@ function renderAll() {
 async function init() {
   state = loadLocal();
   renderAll();
+  // Always fetch from Firebase on load so mobile gets latest data
   const remote = await loadRemote();
-  if (remote && (remote.fields || remote.entries)) {
-    state = { ...initState(), ...remote };
+  if (remote) {
+    state = mergeStates(state, remote);
     saveLocal();
     renderAll();
   }
