@@ -1,4 +1,4 @@
-const CACHE = 'farm-diary-v1';
+const CACHE = 'farm-diary-v2';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
