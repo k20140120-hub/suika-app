@@ -517,7 +517,18 @@ function startSync() {
 // ── Entry helpers ──
 function getEntry(date) {
   const e = state.entries[date];
-  return e ? JSON.parse(JSON.stringify(e)) : newEntry();
+  if (!e) return newEntry();
+  // Ensure all fields exist with defaults (handles old/incomplete entries from Firebase)
+  const base = newEntry();
+  const copy = JSON.parse(JSON.stringify(e));
+  return {
+    ...base,
+    ...copy,
+    tags:       toArray(copy.tags),
+    pesticides: toArray(copy.pesticides),
+    photos:     toArray(copy.photos),
+    weather:    { ...base.weather, ...(copy.weather || {}) },
+  };
 }
 function newEntry() {
   return { fieldId:state.fields[0]?.id||'',
