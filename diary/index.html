@@ -208,6 +208,10 @@ header{background:var(--g0);color:#fff;flex-shrink:0;padding-top:env(safe-area-i
 .fc{flex-shrink:0;font-size:11px;font-weight:700;padding:5px 13px;border-radius:100px;
   border:1.5px solid var(--border);background:var(--card);color:var(--sub);cursor:pointer;white-space:nowrap;}
 .fc.on{background:var(--g0);border-color:var(--g0);color:#fff;}
+.fc-mode{flex-shrink:0;font-size:10px;font-weight:800;padding:5px 11px;border-radius:100px;
+  border:1.5px solid var(--amber);color:var(--amber);cursor:pointer;white-space:nowrap;
+  background:var(--amber-pale);letter-spacing:.5px;}
+.fc-mode.or{border-color:var(--sky);color:var(--sky);background:var(--sky-pale);}
 .search-results-area{padding:0 16px 80px;}
 .search-empty{padding:40px 0;text-align:center;color:var(--muted);font-size:13px;font-weight:600;}
 
@@ -392,7 +396,8 @@ let dirtyEntry = null;
 let syncStatus = 'offline';
 let syncTimer = null;
 let searchQuery = '';
-let searchTagFilter = '';
+let searchTagFilters = [];   // 複数タグ対応（配列）
+let searchTagMode = 'and';   // 'and' | 'or'
 let searchFieldFilter = '';
 let weatherFetching = false;
 
@@ -1033,19 +1038,27 @@ function renderSearch() {
 
 function renderFilterChips() {
   const usedTags = state.tags.filter(t =>
-    Object.values(state.entries).some(e => e.tags?.includes(t)));
+    Object.values(state.entries).some(e => (e.tags||[]).includes(t)));
   const usedFields = state.fields.filter(f =>
     Object.values(state.entries).some(e => e.fieldId === f.id));
+  const hasFilter = searchTagFilters.length > 0 || searchFieldFilter;
+  const modeBtn = searchTagFilters.length > 1
+    ? `<button class="fc-mode ${searchTagMode}" onclick="toggleTagMode()">${searchTagMode.toUpperCase()}</button>`
+    : '';
   return [
-    `<button class="fc ${!searchTagFilter&&!searchFieldFilter?'on':''}" onclick="clearFilters()">すべて</button>`,
-    ...usedTags.map(t => `<button class="fc ${searchTagFilter===t?'on':''}" onclick="setTagFilter('${h(t)}')">${h(t)}</button>`),
+    `<button class="fc ${!hasFilter?'on':''}" onclick="clearFilters()">すべて</button>`,
+    modeBtn,
+    ...usedTags.map(t => {
+      const on = searchTagFilters.includes(t);
+      return `<button class="fc ${on?'on':''}" onclick="toggleTagFilter('${h(t)}')">${h(t)}</button>`;
+    }),
     ...usedFields.map(f => `<button class="fc" style="${searchFieldFilter===f.id?`background:${f.color};border-color:${f.color};color:#fff`:''}"
       onclick="setFieldFilter('${f.id}')">${h(f.name)}</button>`)
   ].join('');
 }
 
 function renderSearchResults() {
-  if (!searchQuery && !searchTagFilter && !searchFieldFilter) {
+  if (!searchQuery && searchTagFilters.length === 0 && !searchFieldFilter) {
     return `<div class="search-empty">キーワードまたはタグで絞り込めます</div>`;
   }
   let html = '';
@@ -1086,7 +1099,14 @@ function renderSearchResults() {
   const q = searchQuery.toLowerCase();
   const results = Object.entries(state.entries)
     .filter(([,e]) => {
-      if (searchTagFilter && !(e.tags||[]).includes(searchTagFilter)) return false;
+      // Tag filter: AND = すべて含む / OR = どれか含む
+      if (searchTagFilters.length > 0) {
+        const et = e.tags || [];
+        const match = searchTagMode === 'and'
+          ? searchTagFilters.every(t => et.includes(t))
+          : searchTagFilters.some(t => et.includes(t));
+        if (!match) return false;
+      }
       if (searchFieldFilter && e.fieldId !== searchFieldFilter) return false;
       if (!q) return true;
       return [e.work, e.growth, ...(e.pesticides||[]).map(p=>p.name+' '+p.amount)]
@@ -1124,9 +1144,21 @@ function onSearchInput(v) {
   renderHeader();
 }
 function clearSearch() { searchQuery = ''; renderSearch(); }
-function clearFilters() { searchTagFilter = ''; searchFieldFilter = ''; document.getElementById('filterScroll').innerHTML = renderFilterChips(); document.getElementById('searchResults').innerHTML = renderSearchResults(); }
-function setTagFilter(t) { searchTagFilter = searchTagFilter===t?'':t; document.getElementById('filterScroll').innerHTML = renderFilterChips(); document.getElementById('searchResults').innerHTML = renderSearchResults(); }
-function setFieldFilter(id) { searchFieldFilter = searchFieldFilter===id?'':id; document.getElementById('filterScroll').innerHTML = renderFilterChips(); document.getElementById('searchResults').innerHTML = renderSearchResults(); }
+function refreshSearch() {
+  document.getElementById('filterScroll').innerHTML = renderFilterChips();
+  document.getElementById('searchResults').innerHTML = renderSearchResults();
+}
+function clearFilters() { searchTagFilters = []; searchFieldFilter = ''; refreshSearch(); }
+function toggleTagFilter(t) {
+  const i = searchTagFilters.indexOf(t);
+  if (i >= 0) searchTagFilters.splice(i, 1); else searchTagFilters.push(t);
+  refreshSearch();
+}
+function toggleTagMode() {
+  searchTagMode = searchTagMode === 'and' ? 'or' : 'and';
+  refreshSearch();
+}
+function setFieldFilter(id) { searchFieldFilter = searchFieldFilter===id?'':id; refreshSearch(); }
 function goDateSearch(date) {
   if (dirtyEntry && !confirm('変更が保存されていません。移動しますか？')) return;
   dirtyEntry = null;
