@@ -112,6 +112,10 @@ header{background:var(--g0);color:#fff;flex-shrink:0;padding-top:env(safe-area-i
 .rc{font-size:11px;font-weight:700;padding:4px 10px;border-radius:9px;
   border:1.5px solid var(--border);color:var(--sub);cursor:pointer;background:none;font-family:inherit;}
 .rc.on{background:var(--sky);border-color:var(--sky);color:#fff;}
+.wx-auto-btn{margin-left:8px;font-size:11px;font-weight:700;padding:5px 10px;border-radius:9px;
+  border:1.5px solid var(--g3);color:var(--g2);cursor:pointer;background:var(--g-pale);
+  font-family:inherit;white-space:nowrap;transition:opacity .15s;}
+.wx-auto-btn:disabled{opacity:.5;cursor:default;}
 
 /* ── Notebook ── */
 .notebook{margin:10px 16px 0;background:var(--card);border-radius:var(--r);
@@ -390,6 +394,7 @@ let syncTimer = null;
 let searchQuery = '';
 let searchTagFilter = '';
 let searchFieldFilter = '';
+let weatherFetching = false;
 
 function initState() {
   return { fields:[], entries:{}, tags:[...DEFAULT_TAGS], pestNames:[] };
@@ -773,6 +778,9 @@ function renderDiary() {
                 ${'なし 少 多'.split(' ')[i]}</button>`).join('')}
           </div>
         </div>
+        <button class="wx-auto-btn" id="wxBtn" onclick="fetchWeather()" title="現在地の天気を取得">
+          ${weatherFetching ? '取得中…' : '📡 自動'}
+        </button>
       </div>
     </div>
 
@@ -887,6 +895,57 @@ function renderPestItems(e) {
         <button class="pest-del" onclick="delPesticide(${i})">×</button>
       </div>`;
   }).join('');
+}
+
+// ── Weather auto-fetch ──
+// Open-Meteo WMO code → app condition
+function wmoCond(code) {
+  if (code === 0 || code === 1) return 'sunny';
+  if (code <= 3 || code === 45 || code === 48) return 'cloudy';
+  if (code >= 95) return 'storm';
+  return 'rain';
+}
+// precipitation mm → rain level
+function rainLevel(mm) {
+  if (!mm || mm < 0.1) return 'none';
+  if (mm < 5) return 'light';
+  return 'heavy';
+}
+
+async function fetchWeather() {
+  if (weatherFetching) return;
+  if (!navigator.geolocation) { showToast('位置情報が使えません'); return; }
+  weatherFetching = true;
+  const btn = document.getElementById('wxBtn');
+  if (btn) { btn.textContent = '取得中…'; btn.disabled = true; }
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+        `&current=temperature_2m,precipitation,weather_code&timezone=auto`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const cur = data.current;
+      const e = ensureDirty();
+      e.weather.cond = wmoCond(cur.weather_code);
+      e.weather.temp = Math.round(cur.temperature_2m);
+      e.weather.rain = rainLevel(cur.precipitation);
+      markDirty();
+      renderDiary();
+      showToast('天気を取得しました ✓');
+    } catch {
+      showToast('天気の取得に失敗しました');
+    } finally {
+      weatherFetching = false;
+    }
+  }, () => {
+    weatherFetching = false;
+    showToast('位置情報の取得を許可してください');
+    const btn = document.getElementById('wxBtn');
+    if (btn) { btn.textContent = '📡 自動'; btn.disabled = false; }
+  }, { timeout: 10000 });
 }
 
 // ── Diary event handlers ──
