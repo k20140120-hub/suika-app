@@ -1,0 +1,13 @@
+{
+  "name": "農業日誌",
+  "short_name": "農業日誌",
+  "description": "農作業の記録・農薬散布履歴・生育状況を管理するアプリ",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1b4228",
+  "theme_color": "#1b4228",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='96' fill='%231b4228'/><text y='.9em' font-size='400' x='56'>🌿</text></svg>", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}
